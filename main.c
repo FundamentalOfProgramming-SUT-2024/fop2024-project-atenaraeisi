@@ -12,6 +12,61 @@ typedef struct user{
 
 user *user1 = NULL;
 
+void game_name(int row, int col);
+void print_border(int rows, int cols);
+void move_in_menu(int rows, int cols, int *selected, int num_items);
+void print_main_menu(int row, int col, int selected);
+int check_to_create_username(const char str[]);
+int check_to_create_password(const char str[]);
+int check_email(const char email[]);
+void creat_account(int rows, int cols);
+int check_username(const char str[], char* user1);
+int check_password(const char str[], char user1[]);
+void log_in(int rows, int cols);
+void print_login_menu(int row, int col, int selected);
+void game_menu(int row, int col, int selected);
+void move_in_game_menu(int rows, int cols, int *selected, int num_items);
+void move_in_menu(int rows, int cols, int *selected, int num_items);
+void show_profile();
+void new_game();
+void continue_game();
+void Scoreboard();
+void Settings();
+
+int main() {
+    initscr();             
+    noecho();              
+    curs_set(FALSE);
+    keypad(stdscr, TRUE); 
+
+    
+
+    if (has_colors()){
+        start_color();
+        init_pair(1, COLOR_BLACK, COLOR_CYAN);
+        init_pair(2, COLOR_RED, COLOR_BLACK);
+        init_pair(3, COLOR_BLUE, COLOR_YELLOW);
+    }      
+
+    // گرفتن ابعاد ترمینال
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);  
+
+    // نوشتن اسم بازی در شروع
+    game_name(rows, cols);
+
+    //menu.............................................
+    int selected = 0; // گزینه انتخاب شده در منو
+    int num_items = 3;
+    move_in_menu(rows, cols, &selected, num_items);
+    //..................................................
+
+    
+                       
+    endwin();             
+    return 0;
+}
+
 void game_name(int row, int col){
     attron(A_BOLD);
     char message[] = "Welcome to ROGUE!";
@@ -36,7 +91,6 @@ void print_border(int rows, int cols){
     }
     refresh();
 }
-void move_in_menu(int rows, int cols, int *selected, int num_items);
 
 void print_main_menu(int row, int col, int selected){
     attron(A_BOLD);
@@ -46,9 +100,7 @@ void print_main_menu(int row, int col, int selected){
     char *menu_items[] = {
         "1. Make a new account",
         "2. Log in ",
-        "3. Start playing",
-        "4. Profile",
-        "5. Score"
+        "3. Start playing"
     };
     int num_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
@@ -64,7 +116,6 @@ void print_main_menu(int row, int col, int selected){
 
     refresh();                             
 }
-
 
 int check_to_create_username(const char str[]){
     FILE* users_info = fopen("users_info.txt", "r");
@@ -145,7 +196,7 @@ int check_email(const char email[]) {
     return 1; // ایمیل معتبر است
 }
 
-void creat_account(int rows, int cols,  int *selected, int num_items){
+void creat_account(int rows, int cols){
     echo();
     clear();
     print_border(rows, cols);
@@ -229,10 +280,8 @@ void creat_account(int rows, int cols,  int *selected, int num_items){
     printw("Account created successfully!");
     refresh();
     sleep(2);
-    move_in_menu(rows, cols, selected, num_items);
 
 }
-1
 int check_username(const char str[], char* user1){
     FILE* users_info = fopen("users_info.txt", "r");
 
@@ -266,7 +315,7 @@ int check_password(const char str[], char user1[]){
     }
 }
 
-void log_in(int rows, int cols,  int *selected, int num_items){
+void log_in(int rows, int cols){
     echo();
     clear();
     print_border(rows, cols);
@@ -320,14 +369,13 @@ void log_in(int rows, int cols,  int *selected, int num_items){
     refresh();
     sleep(2);
     free(user1);
-    move_in_menu(rows, cols, selected, num_items);
 
 }
 
 void print_login_menu(int row, int col, int selected){
     char *menu_items[] = {
-        "1. Continue as Guest",
-        "2. Log in to an existing account"
+        "Continue as Guest",
+        "Log in to an existing account"
     };
     int num_items = 2;
 
@@ -344,22 +392,79 @@ void print_login_menu(int row, int col, int selected){
     refresh();                             
 }
 
-void start_game(){
+void game_menu(int row, int col, int selected){
 
+    attron(A_BOLD);
+    mvprintw(((row-11 )/ 2), (col - strlen("Menuuuuuuuuu")) / 2, "GAME MENU");
+    attroff(A_BOLD);
+    
+    char *menu_items[] = {
+        "Create a new game",
+        "Continue previous game",
+        "Scoreboard",
+        "Settings",
+        "Profile"
+    };
+    int num_items = sizeof(menu_items) / sizeof(menu_items[0]);
+
+    for (int i = 0; i < num_items; i++) {
+        if (i == selected) {
+            attron(A_REVERSE); // گزینه انتخاب شده
+        }
+        mvprintw(row / 2 - 3 + i, (col - strlen(menu_items[i])) / 2, "%s", menu_items[i]);
+        if (i == selected) {
+            attroff(A_REVERSE); // بازگرداندن حالت عادی
+        }
+    }
+
+    refresh();                    
     
 }
+void move_in_game_menu(int rows, int cols, int *selected, int num_items){
 
-void show_profile(){
+        while (1) {
+        clear();
+        print_border(rows, cols);
+        game_menu(rows, cols, *selected);
+        refresh();
 
-    
-}
+        int ch = getch();
+        if (ch == KEY_UP) {
+            *selected = (*selected - 1 + num_items) % num_items; // بالا رفتن در منو
+        } else if (ch == KEY_DOWN) {
+            *selected = (*selected + 1) % num_items; // پایین رفتن در منو
+        } else if (ch == 10 || ch == KEY_ENTER) {
+            break;
+        }
+    }
 
-void show_score(){
+    switch (*selected){
+        case 0:
+            new_game();
+            break;
 
-    
+        case 1:
+            continue_game();
+            break;
+        
+        case 2:
+            Scoreboard();
+            break;
+
+        case 3:
+            Settings();
+            break;
+
+        case 4:
+            show_profile();
+            break;
+    }
+
 }
 
 void move_in_menu(int rows, int cols, int *selected, int num_items){
+    int selected3 = 0;
+    int num_items3 = 5;
     while (1) {
         clear();
         print_border(rows, cols);
@@ -378,7 +483,8 @@ void move_in_menu(int rows, int cols, int *selected, int num_items){
 
     switch (*selected){
         case 0:
-            creat_account(rows, cols, selected, num_items);
+            creat_account(rows, cols);
+            move_in_game_menu(rows, cols, &selected3, num_items3);
             break;
 
         case 1:
@@ -400,61 +506,34 @@ void move_in_menu(int rows, int cols, int *selected, int num_items){
             }
             switch (selected2){
                 case 1:
-                    log_in(rows, cols, selected, num_items);
-                    start_game();
+                    log_in(rows, cols);
+                    move_in_game_menu(rows, cols, &selected3, num_items3);
                     break;
 
                 case 0:
-                    start_game();
+                    move_in_game_menu(rows, cols, &selected3, num_items3);
                     break;
             }
             break;
         
         case 2:
-            start_game();
-            break;
-
-        case 3:
-            show_profile();
-            break;
-
-        case 4:
-            show_score();
+            move_in_game_menu(rows, cols, &selected3, num_items3);
             break;
     }
 
 }
+void show_profile(){
 
-int main() {
-    initscr();             
-    noecho();              
-    curs_set(FALSE);
-    keypad(stdscr, TRUE); 
+}
+void new_game(){
 
-    
+}
+void continue_game(){
 
-    if (has_colors()){
-        start_color();
-        init_pair(1, COLOR_BLACK, COLOR_CYAN);
-        init_pair(2, COLOR_RED, COLOR_BLACK);
-        init_pair(3, COLOR_BLUE, COLOR_YELLOW);
-    }      
+}
+void Scoreboard(){
 
-    // گرفتن ابعاد ترمینال
-    int rows, cols;
-    getmaxyx(stdscr, rows, cols);  
+}
+void Settings(){
 
-    // نوشتن اسم بازی در شروع
-    game_name(rows, cols);
-
-    //menu.............................................
-    int selected = 0; // گزینه انتخاب شده در منو
-    int num_items = 5;
-    move_in_menu(rows, cols, &selected, num_items);
-    //..................................................
-
-    
-                       
-    endwin();             
-    return 0;
 }

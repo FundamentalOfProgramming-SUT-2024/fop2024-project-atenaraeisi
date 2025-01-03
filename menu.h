@@ -8,6 +8,8 @@ typedef struct user{
 }user;
 
 extern user *user1; 
+extern int level_difficulty;
+extern char hero_color;
 
 void game_name(int row, int col);
 void print_border(int rows, int cols);
@@ -20,7 +22,13 @@ void print_login_menu(int row, int col, int selected);
 void new_game();
 void continue_game();
 void Scoreboard();
-void Settings();
 void show_profile();
+void Settings();
+void print_settings_menu();
+void defficulty_level(int rows, int cols, int *selected, int num_items);
+void print_difficulty_level(int row, int col, int selected);
+void print_hero_color(int row, int col, int selected);
+void change_hero_color(int rows, int cols, int *selected, int num_items);
+void change_background_music(int rows, int cols, int *selected, int num_items);
 
 #endif

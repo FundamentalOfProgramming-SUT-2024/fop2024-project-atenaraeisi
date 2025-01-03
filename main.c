@@ -9,11 +9,10 @@
 
 int main() {
     initscr();             
-    noecho();              
+    noecho();
+    cbreak();              
     curs_set(FALSE);
     keypad(stdscr, TRUE); 
-
-    
 
     if (has_colors()){
         start_color();

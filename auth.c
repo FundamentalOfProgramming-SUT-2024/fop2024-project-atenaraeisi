@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "menu.h"
+#include "startup.h"
 
 user *user1 = NULL;
 
@@ -48,7 +49,7 @@ void creat_account(int rows, int cols){
         refresh();
         sleep(1.5);
         clear();
-        print_border(rows, cols);
+        print_border(rows,cols);
         refresh();
         move(4,4);
         printw("Enter your username: %s", user1->UserName);

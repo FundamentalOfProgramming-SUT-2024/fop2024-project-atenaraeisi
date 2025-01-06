@@ -6,34 +6,12 @@
 #include "menu.h"
 #include "auth.h"
 #include "game.h"
+#include "startup.h"
 
 int level_difficulty=0;
 char hero_color = 'r';
 
-void game_name(int row, int col){
-    attron(A_BOLD);
-    char message[] = "Welcome to ROGUE!";
-    mvprintw((row / 2)-1, (col - strlen(message)) / 2, "%s", message); // نمایش پیام در مرکز
-    attroff(A_BOLD);
 
-    char credit[] = "Made by Atena :)";
-    mvprintw((row/2)+1 , (col - strlen(credit))/2 ,"%s", credit);
-    refresh();                             
-    sleep(2);                         
-    clear(); 
-}
-
-void print_border(int rows, int cols){
-    for (int i = 0; i < cols; i++) {
-        mvaddch(0, i, '=');            // خط بالا
-        mvaddch(rows - 1, i, '=');     // خط پایین
-    }
-    for (int i = 0; i < rows; i++) {
-        mvaddstr(i, 0, "||");            // ستون سمت چپ
-        mvaddstr(i, cols - 2, "||");     // ستون سمت راست
-    }
-    refresh();
-}
 
 void print_main_menu(int row, int col, int selected){
     attron(A_BOLD);
@@ -81,7 +59,6 @@ void print_login_menu(int row, int col, int selected){
 }
 
 void print_game_menu(int row, int col, int selected){
-
     attron(A_BOLD);
     mvprintw(((row-11 )/ 2), (col - strlen("Menuuuuuuuuu")) / 2, "GAME MENU");
     attroff(A_BOLD);
@@ -108,25 +85,27 @@ void print_game_menu(int row, int col, int selected){
     refresh();                    
     
 }
-void GameMenu(int rows, int cols, int *selected, int num_items){
+void GameMenu(int rows, int cols){
+    int selected = 0;
+    int num_items = 5;
 
-        while (1) {
+    while (1) {
         clear();
-        print_border(rows, cols);
-        print_game_menu(rows, cols, *selected);
+        print_border();
+        print_game_menu(rows, cols, selected);
         refresh();
 
         int ch = getch();
         if (ch == KEY_UP) {
-            *selected = (*selected - 1 + num_items) % num_items; // بالا رفتن در منو
+            selected = (selected - 1 + num_items) % num_items; // بالا رفتن در منو
         } else if (ch == KEY_DOWN) {
-            *selected = (*selected + 1) % num_items; // پایین رفتن در منو
+            selected = (selected + 1) % num_items; // پایین رفتن در منو
         } else if (ch == 10 || ch == KEY_ENTER) {
             break;
         }
     }
 
-    switch (*selected){
+    switch (selected){
         case 0:
             new_game();
             break;
@@ -152,29 +131,30 @@ void GameMenu(int rows, int cols, int *selected, int num_items){
 
 }
 
-void Menu(int rows, int cols, int *selected, int num_items){
-    int selected3 = 0;
-    int num_items3 = 5;
+void Menu(int rows, int cols){
+    int selected =0;
+    int num_items = 3;
+
     while (1) {
         clear();
         print_border(rows, cols);
-        print_main_menu(rows, cols, *selected);
+        print_main_menu(rows, cols, selected);
         refresh();
 
         int ch = getch();
         if (ch == KEY_UP) {
-            *selected = (*selected - 1 + num_items) % num_items; // بالا رفتن در منو
+            selected = (selected - 1 + num_items) % num_items; // بالا رفتن در منو
         } else if (ch == KEY_DOWN) {
-            *selected = (*selected + 1) % num_items; // پایین رفتن در منو
+            selected = (selected + 1) % num_items; // پایین رفتن در منو
         } else if (ch == 10 || ch == KEY_ENTER) {
             break;
         }
     }
 
-    switch (*selected){
+    switch (selected){
         case 0:
             creat_account(rows, cols);
-            GameMenu(rows, cols, &selected3, num_items3);
+            GameMenu(rows, cols);
             break;
 
         case 1:
@@ -202,17 +182,16 @@ void Menu(int rows, int cols, int *selected, int num_items){
                 case 0:
                     break;
             }
-            GameMenu(rows, cols, &selected3, num_items3);
+            GameMenu(rows, cols);
             break;
 
         case 2:
-            GameMenu(rows, cols, &selected3, num_items3);
+            GameMenu(rows, cols);
             break;
     }
 
 }
 void print_settings_menu(int row, int col, int selected){
-
     attron(A_BOLD);
     mvprintw(((row-11 )/ 2), (col - strlen("Menuuuuuuuuu")) / 2, "SETTINGS");
     attroff(A_BOLD);
@@ -277,9 +256,7 @@ void Settings(int rows, int cols, int *selected, int num_items){
             break;
         
         case 3:
-            int selected3 = 0;
-            int num_items3 = 5;
-            GameMenu(rows, cols, &selected3, num_items3);
+            GameMenu(rows, cols);
             break;
 
     }

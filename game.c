@@ -37,7 +37,7 @@ void new_game(char hero_color, int level_difficulty) {
     setlocale(LC_ALL, "");
     int width, height;
     getmaxyx(stdscr, height, width);
-    PlayerInfo player;
+    Player player;
     player.color = hero_color;
 
     
@@ -50,7 +50,7 @@ void new_game(char hero_color, int level_difficulty) {
         num_rooms = 8 + rand() % 2; // عداد اتاق‌ها بین 8 تا 9
     }
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
-
+    
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, rooms, num_rooms);
 
@@ -81,7 +81,6 @@ void new_game(char hero_color, int level_difficulty) {
 
         // رسم بازیکن روی نقشه
         map[player.y][player.x] = '@';
-
         // نمایش نقشه
         display_map(map, width, height, player, rooms, num_rooms, map_visited);
         refresh();
@@ -116,9 +115,9 @@ void new_game(char hero_color, int level_difficulty) {
         }
     }
 
-    // آزاد کردن حافظه نقشه
-    for (int i = 0; i < height; i++) {
-        free(map[i]);
-    }
-    free(map);
+    // // آزاد کردن حافظه نقشه
+    // for (int i = 0; i < height; i++) {
+    //     free(map[i]);
+    // }
+    // free(map);
 }

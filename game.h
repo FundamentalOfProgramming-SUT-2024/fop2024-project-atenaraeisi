@@ -7,7 +7,7 @@ typedef struct{
     int x;
     int y;
     char color;
-}PlayerInfo;
+}Player;
 
 
 void show_profile();

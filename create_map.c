@@ -9,13 +9,15 @@
 #include "game.h"
 
 
-
 bool is_valid_position(char **map, int x, int y) {
-    if(x != 0 && y != 0 && map[y][x] == '.' && map[y][x+1] == '.' && map[y+1][x] == '.' && map[y][x-1] == '.' && map[y-1][x] == '.'){
-        return true;
-    }
-    return false;
+    return map[y][x] == '.';
 }
+// bool is_valid_position(char **map, int x, int y) {
+//     if(map[y][x] == '.' && map[y][x+1] == '.' && map[y+1][x] == '.' && map[y][x-1] == '.' && map[y-1][x] == '.'){
+//         return true;
+//     }
+//     return false;
+// }
 
 
 void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
@@ -69,7 +71,7 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
     char **map = (char **)malloc(height * sizeof(char *));
     for (int i = 0; i < height; i++) {
         map[i] = (char *)malloc(width * sizeof(char));
-        memset(map[i], ' ', width); // پر کردن نقشه با '.'
+        memset(map[i], ' ', width); // پر کردن نقشه با ' '
     }
 
     int r = 0;
@@ -167,7 +169,73 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
     return map;
 }
 
-void display_map(char **map, int width, int height, PlayerInfo player, Room *rooms, int num_rooms, int **map_visited ) {
+// void display_map(char **map, int width, int height, char hero_color, Room *rooms, int num_rooms) {
+//     mvprintw(3,0,"grwefrwrvgggggggggggggggg");
+//     refresh();
+//     start_color();
+//     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+//     init_pair(2, COLOR_RED, COLOR_BLACK);
+//     init_pair(3, COLOR_BLUE, COLOR_BLACK);
+//     init_pair(4, COLOR_GREEN, COLOR_BLACK);
+//     const char *emojis[] = {"☠️", "☁️", "☺️"};
+
+//     // حلقه برای نمایش اتاق‌ها که بازدید شده‌اند
+//     for (int r = 0; r < num_rooms; r++) {
+//         if (rooms[r].visited == 1) { // فقط اتاق‌های بازدید شده
+//             // نمایش دیوارهای اتاق
+//             for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
+//                 for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
+//                     if (map[y][x] == '|' || map[y][x] == '_') { // دیوارهای اتاق
+//                         mvprintw(y, x, "%c", map[y][x]);
+//                     } else if (map[y][x] == '.') { // فضای خالی اتاق
+//                         mvprintw(y, x, ".");
+//                     } else if (map[y][x] == '+') { // در اتاق
+//                         mvprintw(y, x, "+");
+//                     } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
+//                         attron(COLOR_PAIR(1));
+//                         mvprintw(y, x, "o");
+//                         attroff(COLOR_PAIR(1));
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     mvprintw(4,0,"fdrrrrrrrrrrrrrrrrrrrrrrrrrr");
+//     refresh();
+
+//     // نمایش بازیکن و دیگر اشیاء
+//     for (int i = 0; i < width; i++) {
+//         for (int j = 0; j < height; j++) {
+//             if (map[j][i] == '@') { // نمایش بازیکن
+//                 if (hero_color == 'r') {
+//                     attron(COLOR_PAIR(2));
+//                     mvprintw(j, i, "@");
+//                     attroff(COLOR_PAIR(2));
+//                 } else if (hero_color == 'g') {
+//                     attron(COLOR_PAIR(4));
+//                     mvprintw(j, i, "@");
+//                     attroff(COLOR_PAIR(4));
+//                 } else if (hero_color == 'b') {
+//                     attron(COLOR_PAIR(3));
+//                     mvprintw(j, i, "@");
+//                     attroff(COLOR_PAIR(3));
+//                 }
+//             }
+//             if(map[j][i] == ' '){
+//                 mvprintw(j, i, " ");
+//             }
+//             // if (map_visited[j][i] == 1 && map[j][i] == '#'){
+//             //     mvprintw(j, i, "%c", map[j][i]);
+//             // }
+            
+//         }
+//     }
+//     mvprintw(5,0,"rrrrrrrrrrrrrrrrrrrrryyyyyyyyyyyyyyyyyyyy");
+//     refresh();
+
+//     refresh();
+// }
+void display_map(char **map, int width, int height, Player player, Room *rooms, int num_rooms, int **map_visited ) {
     start_color();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
@@ -215,21 +283,62 @@ void display_map(char **map, int width, int height, PlayerInfo player, Room *roo
                     attroff(COLOR_PAIR(3));
                 }
             }
+            if(map[j][i] != '.' && map[j][i] != '|' && map[j][i] != '_' && map[j][i] != '#' && map[j][i] != 'o' && map[j][i] != '+' && map[j][i] != '@' ){
+                mvprintw(j, i, " ");
+            }
             if (map_visited[j][i] == 1 && map[j][i] == '#'){
                 mvprintw(j, i, "%c", map[j][i]);
             }
         }
     }
-    // if(map[player.y][player.x] == '#'){
-    //     for(int a = 0; a < 10; a++){
-    //         for(int b = 0; b < 10; b++){
-    //             if(map[player.y + b][player.x + a] == '#'){
-    //                 mvprintw(player.y + b, player.x + a, "#");
-    //             }
-    //         }
-    //     }
-    // }
+    if(map[player.y][player.x] == '#'){
+        for(int a = 0; a < 5; a++){
+            for(int b = 0; b < 5; b++){
+                if(map[player.y + b][player.x + a] == '#'){
+                    mvprintw(player.y + b, player.x + a, "#");
+                }
+            }
+        }
+    }
 
     refresh();
 }
 
+
+// void display_map(char ** map, int width, int height, char hero_color, Room *rooms, int num_rooms){
+//     start_color();
+//     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+//     init_pair(2, COLOR_RED, COLOR_BLACK);
+//     init_pair(3, COLOR_BLUE, COLOR_BLACK);
+//     init_pair(4, COLOR_GREEN, COLOR_BLACK);
+//     const char *emojis[] = {"☠️", "☁️", "☺️"};
+
+//     for(int i=0 ; i<width; i++){
+//         for(int j=0 ; j<height ; j++){
+//             if(map[j][i]=='@'){
+//                 // int num_of_emoji = rand() % 3;
+//                 // mvprintw(j, i, "%s", emojis[num_of_emoji]);
+//                 if(hero_color == 'r'){
+//                     attron(COLOR_PAIR(2));
+//                     mvprintw(j, i, "@");
+//                     attroff(COLOR_PAIR(2));
+//                 }else if(hero_color == 'g'){
+//                     attron(COLOR_PAIR(4));
+//                     mvprintw(j, i, "@");
+//                     attroff(COLOR_PAIR(4));
+//                 } else if(hero_color == 'b'){
+//                     attron(COLOR_PAIR(3));
+//                     mvprintw(j, i, "@");
+//                     attroff(COLOR_PAIR(3));
+//                 }
+//             }
+//             else if(map[j][i]=='o'){
+//                 attron(COLOR_PAIR(1));
+//                 mvprintw(j, i, "o");
+//                 attroff(COLOR_PAIR(1));
+//             }
+//             else mvprintw(j, i , "%c", map[j][i]);
+//         }
+//     }
+    
+// }

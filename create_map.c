@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #include "create_map.h"
 
 
@@ -78,10 +79,11 @@ char **create_map(int width, int height, int level_difficulty) {
     int r = 0;
     for (r = 0; r < num_rooms; r++) {
         Room room;
-        room.width = 5 + rand() % 6;  // عرض اتاق بین 5 تا 10
-        room.height = 5 + rand() % 6; // ارتفاع اتاق بین 5 تا 10
+        room.width = 5 + rand() % 8;  // عرض اتاق بین 5 تا 10
+        room.height = 5 + rand() % 8; // ارتفاع اتاق بین 5 تا 10
         room.start_x = rand() % (width - room.width); // موقعیت X شروع اتاق
         room.start_y = rand() % (height - room.height); // موقعیت Y شروع اتاق
+        room.visited = 0;
 
         // بررسی تداخل
         bool overlap = false;
@@ -143,12 +145,25 @@ char **create_map(int width, int height, int level_difficulty) {
             if (rand() % 6 == 0) { // به صورت تصادفی یکی از اتاق‌های قبلی را انتخاب کنید
                 int prev_center_x2 = rooms[j].start_x + rooms[j].width / 2;
                 int prev_center_y2 = rooms[j].start_y + rooms[j].height / 2;
+                //if(abs(prev_center_x2-center_x) < width/3 && abs(prev_center_y2-center_y) < width/3)
                 connect_rooms(map, prev_center_x2, prev_center_y2, center_x, center_y);
             }
         }
         // به‌روزرسانی مرکز اتاق قبلی
         prev_center_x = center_x;
         prev_center_y = center_y;
+    }
+    for(int i = 0; i < num_rooms ; i++){
+        //پنجره داخل هر اتاق به طور تصادفی
+        int num_window = rand() % 2;
+        for(int j = 0 ; j < num_window ; j++){
+            int win_x = rooms[i].start_x;
+            int win_y = rooms[i].start_y + rand() % rooms[i].height;
+            while(map[win_y][win_x] != '|'){
+                win_y = rooms[i].start_y + rand() % rooms[i].height;
+            }
+            map[win_y][win_x] = '=';
+        }
     }
 
     // افزودن بازیکن در موقعیت تصادفی

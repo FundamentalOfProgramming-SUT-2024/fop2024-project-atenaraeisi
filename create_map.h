@@ -8,6 +8,7 @@ typedef struct {
     int start_y;      // مختصات شروع Y
     int width;        // عرض اتاق
     int height;       // ارتفاع اتاق
+    int visited;
 } Room;
 
 bool is_valid_position(char **map, int x, int y);

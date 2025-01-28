@@ -64,6 +64,12 @@ void new_game(char hero_color, int level_difficulty) {
         }
     }
 
+    for (int y = rooms[0].start_y; y < rooms[0].start_y + rooms[0].height; y++) {
+        for (int x = rooms[0].start_x; x < rooms[0].start_x + rooms[0].width; x++) {
+            map_visited[y][x] = 1;
+        }
+    }
+
     // افزودن بازیکن در موقعیت تصادفی
     player.x = rooms[0].start_x + rooms[0].width / 2 ;
     player.y = rooms[0].start_y + rooms[0].height  -1 - rand() % 5;
@@ -81,7 +87,9 @@ void new_game(char hero_color, int level_difficulty) {
 
         // رسم بازیکن روی نقشه
         map[player.y][player.x] = '@';
+
         // نمایش نقشه
+        clear();
         display_map(map, width, height, player, rooms, num_rooms, map_visited);
         refresh();
 

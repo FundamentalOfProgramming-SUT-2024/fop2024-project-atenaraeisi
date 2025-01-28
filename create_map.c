@@ -243,6 +243,17 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
     init_pair(4, COLOR_GREEN, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️"};
 
+    for (int r = 0; r < num_rooms; r++) {
+        for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
+            for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
+                if(map_visited[y][x] == 1){
+                    rooms[r].visited == 1;
+                }
+            }
+        }
+        
+    }
+
     // حلقه برای نمایش اتاق‌ها که بازدید شده‌اند
     for (int r = 0; r < num_rooms; r++) {
         if (rooms[r].visited == 1) { // فقط اتاق‌های بازدید شده
@@ -265,7 +276,6 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
         }
     }
 
-    // نمایش بازیکن و دیگر اشیاء
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
             if (map[j][i] == '@') { // نمایش بازیکن
@@ -283,23 +293,52 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                     attroff(COLOR_PAIR(3));
                 }
             }
-            if(map[j][i] != '.' && map[j][i] != '|' && map[j][i] != '_' && map[j][i] != '#' && map[j][i] != 'o' && map[j][i] != '+' && map[j][i] != '@' ){
-                mvprintw(j, i, " ");
-            }
             if (map_visited[j][i] == 1 && map[j][i] == '#'){
                 mvprintw(j, i, "%c", map[j][i]);
             }
         }
     }
-    if(map[player.y][player.x] == '#'){
-        for(int a = 0; a < 5; a++){
-            for(int b = 0; b < 5; b++){
-                if(map[player.y + b][player.x + a] == '#'){
-                    mvprintw(player.y + b, player.x + a, "#");
-                }
-            }
-        }
-    }
+
+    // نمایش بازیکن و دیگر اشیاء
+    // for(int i=0 ; i<width; i++){
+    //     for(int j=0 ; j<height ; j++){
+    //         if(map[j][i]=='@'){
+    //             // int num_of_emoji = rand() % 3;
+    //             // mvprintw(j, i, "%s", emojis[num_of_emoji]);
+    //             if(player.color == 'r'){
+    //                 attron(COLOR_PAIR(2));
+    //                 mvprintw(j, i, "@");
+    //                 attroff(COLOR_PAIR(2));
+    //             }else if(player.color == 'g'){
+    //                 attron(COLOR_PAIR(4));
+    //                 mvprintw(j, i, "@");
+    //                 attroff(COLOR_PAIR(4));
+    //             } else if(player.color == 'b'){
+    //                 attron(COLOR_PAIR(3));
+    //                 mvprintw(j, i, "@");
+    //                 attroff(COLOR_PAIR(3));
+    //             }
+    //         }
+    //         else if(map_visited[j][i] == 1 && map[j][i] != 'o'){
+    //             mvprintw(j, i , "%c", map[j][i]);
+    //         }
+    //         else if(map[j][i] == 'o' && map_visited[j][i] == 1){
+    //             attron(COLOR_PAIR(1));
+    //             mvprintw(j, i, "o");
+    //             attroff(COLOR_PAIR(1));
+    //         }
+    //         else mvprintw(j, i , " ");
+    //     }
+    // }
+    // if(map[player.y][player.x] == '#'){
+    //     for(int a = 0; a < 5; a++){
+    //         for(int b = 0; b < 5; b++){
+    //             if(map[player.y + b][player.x + a] == '#'){
+    //                 mvprintw(player.y + b, player.x + a, "#");
+    //             }
+    //         }
+    //     }
+    // }
 
     refresh();
 }

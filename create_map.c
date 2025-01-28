@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <locale.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
@@ -9,7 +10,10 @@
 
 
 bool is_valid_position(char **map, int x, int y) {
-    return map[y][x] == '.';
+    if(x != 0 && y != 0 && map[y][x] == '.' && map[y][x+1] == '.' && map[y+1][x] == '.' && map[y][x-1] == '.' && map[y-1][x] == '.'){
+        return true;
+    }
+    return false;
 }
 
 
@@ -59,7 +63,7 @@ void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
 }
 
 
-char **create_map(int width, int height, int level_difficulty) {
+char **create_map(int width, int height, int level_difficulty, Room *rooms, int *rooms_number) {
     // تخصیص حافظه برای نقشه
     char **map = (char **)malloc(height * sizeof(char *));
     for (int i = 0; i < height; i++) {
@@ -74,16 +78,18 @@ char **create_map(int width, int height, int level_difficulty) {
     } else if(level_difficulty == 3){
         num_rooms = 8 + rand() % 2; // عداد اتاق‌ها بین 8 تا 9
     }
+    *rooms_number = num_rooms;
 
-    Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
+    rooms = (Room *)malloc(num_rooms * sizeof(Room));
     int r = 0;
     for (r = 0; r < num_rooms; r++) {
         Room room;
-        room.width = 5 + rand() % 8;  // عرض اتاق بین 5 تا 10
-        room.height = 5 + rand() % 8; // ارتفاع اتاق بین 5 تا 10
+        room.width = (width / 10) + rand() % (width / 6 - width / 10 + 1);
+        room.height = (height / 10) + rand() % (height / 6 - height / 10 + 1);
         room.start_x = rand() % (width - room.width); // موقعیت X شروع اتاق
         room.start_y = rand() % (height - room.height); // موقعیت Y شروع اتاق
         room.visited = 0;
+        room.floor = 1;
 
         // بررسی تداخل
         bool overlap = false;
@@ -165,22 +171,12 @@ char **create_map(int width, int height, int level_difficulty) {
             map[win_y][win_x] = '=';
         }
     }
-
-    // افزودن بازیکن در موقعیت تصادفی
-    int player_x = rand() % width;
-    int player_y = rand() % height;
-    while (!is_valid_position(map, player_x, player_y)){ // پیدا کردن موقعیت خالی
-        player_x = rand() % width;
-        player_y = rand() % height;
-    }
-    map[player_y][player_x] = '@';
-
-    
+    rooms[0].visited = 1;
 
     return map;
 }
 
-void display_map(char ** map, int width, int height, char hero_color){
+void display_map(char **map, int width, int height, char hero_color, Room *rooms, int num_rooms) {
     start_color();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
@@ -188,34 +184,49 @@ void display_map(char ** map, int width, int height, char hero_color){
     init_pair(4, COLOR_GREEN, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️"};
 
-    for(int i=0 ; i<width; i++){
-        for(int j=0 ; j<height ; j++){
-            if(map[j][i]=='@'){
-                // int num_of_emoji = rand() % 3;
-                // mvprintw(j, i, "%s", emojis[num_of_emoji]);
-                if(hero_color == 'r'){
+    // حلقه برای نمایش اتاق‌ها که بازدید شده‌اند
+    for (int r = 0; r < num_rooms; r++) {
+        if (rooms[r].visited == 1) { // فقط اتاق‌های بازدید شده
+            // نمایش دیوارهای اتاق
+            for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
+                for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
+                    if (map[y][x] == '|' || map[y][x] == '_') { // دیوارهای اتاق
+                        mvprintw(y, x, "%c", map[y][x]);
+                    } else if (map[y][x] == '.') { // فضای خالی اتاق
+                        mvprintw(y, x, ".");
+                    } else if (map[y][x] == '+') { // در اتاق
+                        mvprintw(y, x, "+");
+                    } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
+                        attron(COLOR_PAIR(1));
+                        mvprintw(y, x, "o");
+                        attroff(COLOR_PAIR(1));
+                    }
+                }
+            }
+        }
+    }
+
+    // نمایش بازیکن و دیگر اشیاء
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            if (map[j][i] == '@') { // نمایش بازیکن
+                if (hero_color == 'r') {
                     attron(COLOR_PAIR(2));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(2));
-                }else if(hero_color == 'g'){
+                } else if (hero_color == 'g') {
                     attron(COLOR_PAIR(4));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(4));
-                } else if(hero_color == 'b'){
+                } else if (hero_color == 'b') {
                     attron(COLOR_PAIR(3));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(3));
                 }
             }
-            else if(map[j][i]=='o'){
-                attron(COLOR_PAIR(1));
-                mvprintw(j, i, "o");
-                attroff(COLOR_PAIR(1));
-            }
-            else mvprintw(j, i , "%c", map[j][i]);
         }
     }
-    
-}
 
+    refresh();
+}
 

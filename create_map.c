@@ -58,15 +58,22 @@ void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
 }
 
 
-char **create_map(int width, int height) {
+char **create_map(int width, int height, int level_difficulty) {
     // تخصیص حافظه برای نقشه
     char **map = (char **)malloc(height * sizeof(char *));
     for (int i = 0; i < height; i++) {
         map[i] = (char *)malloc(width * sizeof(char));
         memset(map[i], ' ', width); // پر کردن نقشه با '.'
     }
+    int num_rooms;
+    if(level_difficulty == 1){
+        num_rooms = 6 + rand() % 2; // عداد اتاق‌ها بین 6 تا 7
+    } else if(level_difficulty == 2){
+        num_rooms = 7 + rand() % 2; // عداد اتاق‌ها بین 7 تا 8
+    } else if(level_difficulty == 3){
+        num_rooms = 8 + rand() % 2; // عداد اتاق‌ها بین 8 تا 9
+    }
 
-    int num_rooms = 6 + rand() % 4; // تعداد اتاق‌ها بین 6 تا 9
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     int r = 0;
     for (r = 0; r < num_rooms; r++) {
@@ -158,9 +165,12 @@ char **create_map(int width, int height) {
     return map;
 }
 
-void display_map(char ** map, int width, int height){
+void display_map(char ** map, int width, int height, char hero_color){
     start_color();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
+    init_pair(3, COLOR_BLUE, COLOR_BLACK);
+    init_pair(4, COLOR_GREEN, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️"};
 
     for(int i=0 ; i<width; i++){
@@ -168,7 +178,19 @@ void display_map(char ** map, int width, int height){
             if(map[j][i]=='@'){
                 // int num_of_emoji = rand() % 3;
                 // mvprintw(j, i, "%s", emojis[num_of_emoji]);
-                
+                if(hero_color == 'r'){
+                    attron(COLOR_PAIR(2));
+                    mvprintw(j, i, "@");
+                    attroff(COLOR_PAIR(2));
+                }else if(hero_color == 'g'){
+                    attron(COLOR_PAIR(4));
+                    mvprintw(j, i, "@");
+                    attroff(COLOR_PAIR(4));
+                } else if(hero_color == 'b'){
+                    attron(COLOR_PAIR(3));
+                    mvprintw(j, i, "@");
+                    attroff(COLOR_PAIR(3));
+                }
             }
             else if(map[j][i]=='o'){
                 attron(COLOR_PAIR(1));

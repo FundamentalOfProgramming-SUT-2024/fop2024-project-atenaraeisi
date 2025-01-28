@@ -31,20 +31,20 @@ void Scoreboard(){
 }
 
 
-void new_game() {
+void new_game(char hero_color, int level_difficulty) {
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
     int width, height;
     getmaxyx(stdscr, height, width);
 
     // ساخت نقشه بازی
-    char **map = create_map(width, height);
+    char **map = create_map(width, height, level_difficulty);
 
     
     
 
     // نمایش نقشه بازی
-    display_map(map, width, height);
+    display_map(map, width, height, hero_color);
     // نمایش
     refresh();
 

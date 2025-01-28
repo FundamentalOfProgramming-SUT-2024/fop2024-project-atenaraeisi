@@ -1,7 +1,9 @@
 #include <ncurses.h>
 #include <string.h>  
 #include <unistd.h> 
+#include <locale.h>
 #include <stdlib.h>
+#include <time.h>
 #include <ctype.h>
 #include "startup.h"
 
@@ -35,6 +37,8 @@ void print_border(int rows, int cols){
 }
 
 void startup(){
+    setlocale(LC_ALL, "");
+    srand(time(NULL));
     initscr();             
     noecho();
     cbreak();              

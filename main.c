@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <locale.h>
 #include <string.h>  
 #include <unistd.h> 
 #include <stdlib.h>
@@ -7,6 +8,7 @@
 #include "auth.h"
 #include "game.h"
 #include "startup.h"
+#include "create_map.h"
 
 int main() {
     startup();

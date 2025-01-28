@@ -8,7 +8,7 @@
 #include "game.h"
 #include "startup.h"
 
-int level_difficulty=0;
+int level_difficulty = 2;
 char hero_color = 'r';
 
 
@@ -107,7 +107,7 @@ void GameMenu(int rows, int cols){
 
     switch (selected){
         case 0:
-            new_game();
+            new_game(hero_color, level_difficulty);
             break;
 
         case 1:

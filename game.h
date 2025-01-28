@@ -3,6 +3,11 @@
 
 #include <ncurses.h>
 
+typedef struct{
+    int x;
+    int y;
+    char color;
+}PlayerInfo;
 
 
 void show_profile();

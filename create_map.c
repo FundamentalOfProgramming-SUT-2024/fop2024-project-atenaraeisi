@@ -6,6 +6,7 @@
 #include <time.h>
 #include <math.h>
 #include "create_map.h"
+#include "game.h"
 
 
 
@@ -63,24 +64,14 @@ void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
 }
 
 
-char **create_map(int width, int height, int level_difficulty, Room *rooms, int *rooms_number) {
+char **create_map(int width, int height, int level_difficulty, Room *rooms, int num_rooms) {
     // تخصیص حافظه برای نقشه
     char **map = (char **)malloc(height * sizeof(char *));
     for (int i = 0; i < height; i++) {
         map[i] = (char *)malloc(width * sizeof(char));
         memset(map[i], ' ', width); // پر کردن نقشه با '.'
     }
-    int num_rooms;
-    if(level_difficulty == 1){
-        num_rooms = 6 + rand() % 2; // عداد اتاق‌ها بین 6 تا 7
-    } else if(level_difficulty == 2){
-        num_rooms = 7 + rand() % 2; // عداد اتاق‌ها بین 7 تا 8
-    } else if(level_difficulty == 3){
-        num_rooms = 8 + rand() % 2; // عداد اتاق‌ها بین 8 تا 9
-    }
-    *rooms_number = num_rooms;
 
-    rooms = (Room *)malloc(num_rooms * sizeof(Room));
     int r = 0;
     for (r = 0; r < num_rooms; r++) {
         Room room;
@@ -176,7 +167,7 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
     return map;
 }
 
-void display_map(char **map, int width, int height, char hero_color, Room *rooms, int num_rooms) {
+void display_map(char **map, int width, int height, PlayerInfo player, Room *rooms, int num_rooms, int **map_visited ) {
     start_color();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
@@ -210,22 +201,34 @@ void display_map(char **map, int width, int height, char hero_color, Room *rooms
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
             if (map[j][i] == '@') { // نمایش بازیکن
-                if (hero_color == 'r') {
+                if (player.color == 'r') {
                     attron(COLOR_PAIR(2));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(2));
-                } else if (hero_color == 'g') {
+                } else if (player.color == 'g') {
                     attron(COLOR_PAIR(4));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(4));
-                } else if (hero_color == 'b') {
+                } else if (player.color == 'b') {
                     attron(COLOR_PAIR(3));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(3));
                 }
             }
+            if (map_visited[j][i] == 1 && map[j][i] == '#'){
+                mvprintw(j, i, "%c", map[j][i]);
+            }
         }
     }
+    // if(map[player.y][player.x] == '#'){
+    //     for(int a = 0; a < 10; a++){
+    //         for(int b = 0; b < 10; b++){
+    //             if(map[player.y + b][player.x + a] == '#'){
+    //                 mvprintw(player.y + b, player.x + a, "#");
+    //             }
+    //         }
+    //     }
+    // }
 
     refresh();
 }

@@ -123,7 +123,6 @@ void creat_account(int rows, int cols){
     fclose(users_info);
     noecho();
 
-    free(user1);
 
     // ایجاد پنجره برای پیام‌ها
     WINDOW *msg_win = newwin(3, strlen("Account created successfully!")+2, 2*rows/3, (cols - strlen("Account created successfully!"))/2);
@@ -193,6 +192,7 @@ void log_in(int rows, int cols){
         getstr(user1->password);
     }
     
+    save_user(user1);
     move(10, 4);
     printw("Welcome %s!", user1->UserName);
     refresh();

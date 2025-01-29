@@ -15,6 +15,7 @@ extern user *user1;
 extern int level_difficulty;
 extern char hero_color;
 
+void save_user(user *new_user);
 void game_menu();
 void Menu();
 void GameMenu();

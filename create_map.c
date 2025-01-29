@@ -173,121 +173,121 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
     return map;
 }
 
-// void display_map(char **map, int width, int height, Player player, Room *rooms, int num_rooms, int **map_visited ) {
-//     start_color();
-//     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
-//     init_pair(2, COLOR_RED, COLOR_BLACK);
-//     init_pair(3, COLOR_BLUE, COLOR_BLACK);
-//     init_pair(4, COLOR_GREEN, COLOR_BLACK);
-//     const char *emojis[] = {"☠️", "☁️", "☺️"};
+void display_map(char **map, int width, int height, Player player, Room *rooms, int num_rooms, int **map_visited ) {
+    start_color();
+    init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
+    init_pair(3, COLOR_BLUE, COLOR_BLACK);
+    init_pair(4, COLOR_GREEN, COLOR_BLACK);
+    const char *emojis[] = {"☠️", "☁️", "☺️"};
 
-//     //مشخص کردن اتاق های دیده شده
-//     for (int r = 0; r < num_rooms; r++) {
-//         for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
-//             for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
-//                 if(map_visited[y][x] == 1){
-//                     rooms[r].visited = 1;
-//                 }
-//             }
-//         }
+    //مشخص کردن اتاق های دیده شده
+    for (int r = 0; r < num_rooms; r++) {
+        for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
+            for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
+                if(map_visited[y][x] == 1){
+                    rooms[r].visited = 1;
+                }
+            }
+        }
         
-//     }
+    }
 
-//     // حلقه برای نمایش اتاق‌ها که بازدید شده‌اند
-//     for (int r = 0; r < num_rooms; r++) {
-//         if (rooms[r].visited == 1) { // فقط اتاق‌های بازدید شده
-//             // نمایش دیوارهای اتاق
-//             for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
-//                 for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
-//                     if (map[y][x] == '|' || map[y][x] == '_') { // دیوارهای اتاق
-//                         mvprintw(y, x, "%c", map[y][x]);
-//                     } else if (map[y][x] == '.') { // فضای خالی اتاق
-//                         mvprintw(y, x, ".");
-//                     } else if (map[y][x] == '+') { // در اتاق
-//                         mvprintw(y, x, "+");
-//                     } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
-//                         attron(COLOR_PAIR(1));
-//                         mvprintw(y, x, "o");
-//                         attroff(COLOR_PAIR(1));
-//                     }
-//                 }
-//             }
-//         }
-//     }
+    // حلقه برای نمایش اتاق‌ها که بازدید شده‌اند
+    for (int r = 0; r < num_rooms; r++) {
+        if (rooms[r].visited == 1) { // فقط اتاق‌های بازدید شده
+            // نمایش دیوارهای اتاق
+            for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
+                for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
+                    if (map[y][x] == '|' || map[y][x] == '_') { // دیوارهای اتاق
+                        mvprintw(y, x, "%c", map[y][x]);
+                    } else if (map[y][x] == '.') { // فضای خالی اتاق
+                        mvprintw(y, x, ".");
+                    } else if (map[y][x] == '+') { // در اتاق
+                        mvprintw(y, x, "+");
+                    } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
+                        attron(COLOR_PAIR(1));
+                        mvprintw(y, x, "o");
+                        attroff(COLOR_PAIR(1));
+                    }
+                }
+            }
+        }
+    }
 
-//     // نمایش برای چیزهای دیگری که دیده شده و خود کاراکتر اصلی
-//     for (int i = 0; i < width; i++) {
-//         for (int j = 0; j < height; j++) {
-//             if (map[j][i] == '@') { // نمایش بازیکن
-//                 if (player.color == 'r') {
-//                     attron(COLOR_PAIR(2));
-//                     mvprintw(j, i, "@");
-//                     attroff(COLOR_PAIR(2));
-//                 } else if (player.color == 'g') {
-//                     attron(COLOR_PAIR(4));
-//                     mvprintw(j, i, "@");
-//                     attroff(COLOR_PAIR(4));
-//                 } else if (player.color == 'b') {
-//                     attron(COLOR_PAIR(3));
-//                     mvprintw(j, i, "@");
-//                     attroff(COLOR_PAIR(3));
-//                 }
-//             }
-//             if (map_visited[j][i] == 1 && map[j][i] == '#'){
-//                 mvprintw(j, i, "%c", map[j][i]);
-//             }
-//         }
-//     }
+    // نمایش برای چیزهای دیگری که دیده شده و خود کاراکتر اصلی
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            if (map[j][i] == '@') { // نمایش بازیکن
+                if (player.color == 'r') {
+                    attron(COLOR_PAIR(2));
+                    mvprintw(j, i, "@");
+                    attroff(COLOR_PAIR(2));
+                } else if (player.color == 'g') {
+                    attron(COLOR_PAIR(4));
+                    mvprintw(j, i, "@");
+                    attroff(COLOR_PAIR(4));
+                } else if (player.color == 'b') {
+                    attron(COLOR_PAIR(3));
+                    mvprintw(j, i, "@");
+                    attroff(COLOR_PAIR(3));
+                }
+            }
+            if (map_visited[j][i] == 1 && map[j][i] == '#'){
+                mvprintw(j, i, "%c", map[j][i]);
+            }
+        }
+    }
 
-//     //نمایش 5 واحد جلوتر در راهرو
-//     if(map[player.y +1][player.x] == '#' || map[player.y][player.x - 1 ] == '#' || map[player.y][player.x + 1] == '#' || map[player.y -1][player.x] == '#'){
-//         if(player.direction[0] == 'x'){
-//             for(int a = 0; a < 5; a++){
-//                 if(player.direction[1] == '+'){
-//                     if(player.x + a > 0 && player.x + a < width){
-//                         if(map[player.y][player.x + a] == '#'){
-//                             mvprintw(player.y, player.x + a, "#");
-//                         } 
-//                     }
-//                 }
-//                else if(player.direction[1] == '-'){
-//                     if(player.x - a > 0 && player.x - a < width){
-//                         if(map[player.y][player.x - a] == '#'){
-//                             mvprintw(player.y, player.x - a, "#");
-//                         } 
-//                     }
-//                }
+    //نمایش 5 واحد جلوتر در راهرو
+    if(map[player.y +1][player.x] == '#' || map[player.y][player.x - 1 ] == '#' || map[player.y][player.x + 1] == '#' || map[player.y -1][player.x] == '#'){
+        if(player.direction[0] == 'x'){
+            for(int a = 0; a < 5; a++){
+                if(player.direction[1] == '+'){
+                    if(player.x + a > 0 && player.x + a < width){
+                        if(map[player.y][player.x + a] == '#'){
+                            mvprintw(player.y, player.x + a, "#");
+                        } 
+                    }
+                }
+               else if(player.direction[1] == '-'){
+                    if(player.x - a > 0 && player.x - a < width){
+                        if(map[player.y][player.x - a] == '#'){
+                            mvprintw(player.y, player.x - a, "#");
+                        } 
+                    }
+               }
                     
-//             }
-//         }
-//         else if(player.direction[0] == 'y'){     
-//             if(player.direction[1] == '+'){
-//                 for(int b = 0; b < 5; b++){
-//                     if(player.y + b < height && player.y + b > 0){
-//                         if(map[player.y + b][player.x] == '#'){
-//                             mvprintw(player.y + b, player.x, "#");
-//                         } 
-//                     }
+            }
+        }
+        else if(player.direction[0] == 'y'){     
+            if(player.direction[1] == '+'){
+                for(int b = 0; b < 5; b++){
+                    if(player.y + b < height && player.y + b > 0){
+                        if(map[player.y + b][player.x] == '#'){
+                            mvprintw(player.y + b, player.x, "#");
+                        } 
+                    }
                     
-//                 }
-//             }
-//             else if(player.direction[1] == '-'){
-//                 for(int b = 0; b < 5; b++){
-//                     if(player.y - b < height && player.y - b > 0){
-//                         if(map[player.y - b][player.x] == '#'){
-//                             mvprintw(player.y - b, player.x, "#");
-//                         } 
-//                     }
+                }
+            }
+            else if(player.direction[1] == '-'){
+                for(int b = 0; b < 5; b++){
+                    if(player.y - b < height && player.y - b > 0){
+                        if(map[player.y - b][player.x] == '#'){
+                            mvprintw(player.y - b, player.x, "#");
+                        } 
+                    }
                     
-//                 }
-//             }     
+                }
+            }     
             
-//         }
+        }
         
-//     }
-// }
+    }
+}
 
-void display_map(char ** map, int width, int height, Player player, Room *rooms, int num_rooms, int **map_visited){
+void display_whole_map(char ** map, int width, int height, Player player){
     start_color();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);

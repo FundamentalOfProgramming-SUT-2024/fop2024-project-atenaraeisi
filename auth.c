@@ -192,12 +192,18 @@ void log_in(int rows, int cols){
         getstr(user1->password);
     }
     
-    save_user(user1);
+    user *users = NULL;
+    int total_users = load_users_from_file("users.bin", &users);
+    for(int i = 0; i < total_users ; i++){
+        if(strcmp(users[i].UserName, user1->UserName) == 0){
+            *user1 = users[i];
+        }
+    }
+
     move(10, 4);
     printw("Welcome %s!", user1->UserName);
     refresh();
     sleep(2);
-    free(user1);
 
 }
 

@@ -20,6 +20,10 @@ typedef struct {
     char theme;
 } Room;
 
+void display_leaderboard();
+int compare_users_by_points();
+void sort_users_by_points();
+int load_users_from_file();
 void show_profile();
 void new_game();
 void continue_game();

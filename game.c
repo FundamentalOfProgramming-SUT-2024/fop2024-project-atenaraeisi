@@ -208,8 +208,6 @@ void continue_game() {
 }
 
 void new_game() {
-    user1->times_played++;
-
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
     int width, height;
@@ -451,7 +449,7 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
                 attron(A_BOLD);
             }
             
-            mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d |        %d         |     %d     ",
+            mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
                      idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
                      users[idx].times_played, users[idx].times_played);
             

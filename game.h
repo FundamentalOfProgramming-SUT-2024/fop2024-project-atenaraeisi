@@ -13,7 +13,7 @@ typedef struct{
 
 void show_profile();
 void new_game(char hero_color, int level_difficulty);
-void continue_game();
+void continue_game(char hero_color, int level_difficulty);
 void Scoreboard();
 void show_message(WINDOW *msg_win, const char *message);
 

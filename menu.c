@@ -112,8 +112,8 @@ void GameMenu(int rows, int cols){
             break;
 
         case 1:
-            continue_game();
-            // GameMenu(rows, cols);
+            continue_game(hero_color, level_difficulty);
+            GameMenu(rows, cols);
             break;
         
         case 2:

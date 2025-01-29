@@ -118,7 +118,7 @@ void continue_game(char hero_color, int level_difficulty) {
     setlocale(LC_ALL, "");
     int width, height, num_rooms;    
     getmaxyx(stdscr, height, width);
-
+    height -= 5;
 
     char **map;
     int **map_visited;
@@ -190,6 +190,9 @@ void continue_game(char hero_color, int level_difficulty) {
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;
+            case 27: // خروج از بازی
+                game_running = false; // پایان حلقه
+                break;
         }
     }
 
@@ -213,6 +216,7 @@ void new_game(char hero_color, int level_difficulty) {
     setlocale(LC_ALL, "");
     int width, height;
     getmaxyx(stdscr, height, width);
+    height -= 5;
     Player player;
     player.color = hero_color;
 
@@ -305,7 +309,42 @@ void new_game(char hero_color, int level_difficulty) {
                     player.direction[1] = '+';
                 }
                 break;
+            case KEY_PPAGE:
+                if (player.y > 0 && player.x < width - 1 && (map[player.y-1][player.x + 1] == '.' || map[player.y-1][player.x + 1] == '#' || map[player.y-1][player.x + 1] == '+')){
+                    player.x++;
+                    player.y--;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '-';
+                }
+                break;
+            case KEY_NPAGE:
+                if (player.y < height - 1 && player.x < width - 1 && (map[player.y + 1][player.x + 1] == '.' || map[player.y + 1][player.x + 1] == '#' || map[player.y + 1][player.x + 1] == '+')){
+                    player.x++;
+                    player.y++;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '+';
+                }
+                break;
+            case KEY_HOME:
+                if (player.y > 0 && player.x > 0 && (map[player.y - 1][player.x - 1] == '.' || map[player.y - 1][player.x - 1] == '#' || map[player.y - 1][player.x - 1] == '+')){
+                    player.x--;
+                    player.y--;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '-';
+                }
+                break;
+            case KEY_END:
+                if (player.y < height - 1 && player.x > 0 && (map[player.y + 1][player.x - 1] == '.' || map[player.y + 1][player.x - 1] == '#' || map[player.y + 1][player.x - 1] == '+')){
+                    player.x--;
+                    player.y++;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '+';
+                }
+                break;
             case 'q': // خروج از بازی
+                game_running = false; // پایان حلقه
+                break;
+            case 27: // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;
         }

@@ -15,13 +15,13 @@ char hero_color = 'r';
 
 void print_main_menu(int row, int col, int selected){
     attron(A_BOLD);
-    mvprintw(((row-11 )/ 2), (col - strlen("Menuuuuuuuuu")) / 2, "Menu");
+    mvprintw(((row-11 )/ 2), (col - strlen("Menu")) / 2, "Menu");
     attroff(A_BOLD);
     
     char *menu_items[] = {
-        "1. Make a new account",
-        "2. Log in ",
-        "3. Start playing"
+        "Make a new account",
+        "Log in ",
+        "Start playing"
     };
     int num_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
@@ -29,7 +29,7 @@ void print_main_menu(int row, int col, int selected){
         if (i == selected) {
             attron(A_REVERSE); // گزینه انتخاب شده
         }
-        mvprintw(row / 2 - 3 + i, (col - strlen("2. Log in to an existing account")) / 2, "%s", menu_items[i]);
+        mvprintw(row / 2 - 3 + i, (col - strlen("Make a new account")) / 2, "%s", menu_items[i]);
         if (i == selected) {
             attroff(A_REVERSE); // بازگرداندن حالت عادی
         }
@@ -60,7 +60,7 @@ void print_login_menu(int row, int col, int selected){
 
 void print_game_menu(int row, int col, int selected){
     attron(A_BOLD);
-    mvprintw(((row-11 )/ 2), (col - strlen("Menuuuuuuuuu")) / 2, "GAME MENU");
+    mvprintw(((row-11 )/ 2), (col - strlen("GAME MENU")) / 2, "GAME MENU");
     attroff(A_BOLD);
     
     char *menu_items[] = {
@@ -68,7 +68,8 @@ void print_game_menu(int row, int col, int selected){
         "Continue previous game",
         "Scoreboard",
         "Settings",
-        "Profile"
+        "Profile",
+        "Exit"
     };
     int num_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
@@ -87,7 +88,7 @@ void print_game_menu(int row, int col, int selected){
 }
 void GameMenu(int rows, int cols){
     int selected = 0;
-    int num_items = 5;
+    int num_items = 6;
 
     while (1) {
         clear();
@@ -130,6 +131,8 @@ void GameMenu(int rows, int cols){
         case 4:
             show_profile();
             // GameMenu(rows, cols);
+            break;
+        case 5:
             break;
     }
 
@@ -332,7 +335,6 @@ void defficulty_level(int rows, int cols, int *selected, int num_items){
 }
 
 void print_hero_color(int row, int col, int selected){
-
     attron(A_BOLD);
     mvprintw(((row-11 )/ 2), (col - strlen("CHOOSE COLOR OF HERO")) / 2, "CHOOSE COLOR OF HERO");
     attroff(A_BOLD);

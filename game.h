@@ -17,6 +17,7 @@ typedef struct {
     int height;       // ارتفاع اتاق
     int visited;  //بازیکن در این اتاق بوده یا نه 
     int floor; //طبقه ی اتاق
+    char theme;
 } Room;
 
 void show_profile();

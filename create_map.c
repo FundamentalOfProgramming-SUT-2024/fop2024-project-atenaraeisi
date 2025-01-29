@@ -78,7 +78,7 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
     for (r = 0; r < num_rooms; r++) {
         Room room;
         room.width = (width / 10) + rand() % (width / 6 - width / 10 + 1);
-        room.height = (height / 7) + rand() % (height / 6 - height / 10 + 1) + 1;
+        room.height = (height / 6) + rand() % (height / 6 - height / 10 + 1) + 1;
         room.start_x = rand() % (width - room.width); // موقعیت X شروع اتاق
         room.start_y = rand() % (height - room.height); // موقعیت Y شروع اتاق
         room.visited = 0;

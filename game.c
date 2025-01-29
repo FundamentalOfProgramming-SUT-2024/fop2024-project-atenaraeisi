@@ -23,8 +23,7 @@ void show_message(WINDOW *msg_win, const char *message) {
 //WINDOW *msg_win = newwin(height, width, start_y, start_x);
 //wrefresh(msg_win);
 
-
-void save_map_to_binary_file(char **map, int rows, int cols) {
+void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int num_rooms, Player *player,  int **map_visited) {
     FILE *file = fopen("previous_game.bin", "wb");
     if (!file) {
         perror("Could not open file");
@@ -40,24 +39,62 @@ void save_map_to_binary_file(char **map, int rows, int cols) {
         fwrite(map[i], sizeof(char), cols, file);
     }
 
+    // ذخیره map_visited
+    for (int i = 0; i < rows; i++) {
+        fwrite(map_visited[i], sizeof(int), cols, file);
+    }
+
+
+    // ذخیره تعداد اتاق‌ها
+    fwrite(&num_rooms, sizeof(int), 1, file);
+
+    // ذخیره اطلاعات اتاق‌ها
+    fwrite(rooms, sizeof(Room), num_rooms, file);
+
+    // ذخیره اطلاعات بازیکن
+    fwrite(player, sizeof(Player), 1, file);
+
     fclose(file);
 }
 
-void load_map_from_binary_file(char ***map, int *rows, int *cols) {
+void load_game_from_binary_file(char ***map, int *rows, int *cols, Room **rooms, int *num_rooms, Player *player, int ***map_visited) {
     FILE *file = fopen("previous_game.bin", "rb");
     if (!file) {
         perror("Could not open file");
         return;
     }
 
+    // خواندن تعداد سطرها و ستون‌ها
     fread(rows, sizeof(int), 1, file);
     fread(cols, sizeof(int), 1, file);
 
+    // تخصیص حافظه برای نقشه
     *map = (char **)malloc(*rows * sizeof(char *));
     for (int i = 0; i < *rows; i++) {
         (*map)[i] = (char *)malloc(*cols * sizeof(char));
         fread((*map)[i], sizeof(char), *cols, file);
     }
+
+    *map_visited = (int **)malloc(*rows * sizeof(int *));
+    for (int i = 0; i < *rows; i++) {
+        (*map_visited)[i] = (int *)malloc(*cols * sizeof(int));
+    }
+    // خواندن `map_visited`
+    for (int i = 0; i < *rows; i++) {
+        fread((*map_visited)[i], sizeof(int), *cols, file);
+    }
+
+    
+
+    // خواندن تعداد اتاق‌ها
+    fread(num_rooms, sizeof(int), 1, file);
+
+    // تخصیص حافظه برای اتاق‌ها
+    *rooms = (Room *)malloc(*num_rooms * sizeof(Room));
+    fread(*rooms, sizeof(Room), *num_rooms, file);
+
+    // خواندن اطلاعات بازیکن
+    fread(player, sizeof(Player), 1, file);
 
     fclose(file);
 }
@@ -65,25 +102,97 @@ void load_map_from_binary_file(char ***map, int *rows, int *cols) {
 void show_profile(){
 
 }
-void continue_game(char hero_color, int level_difficulty){
+
+void continue_game(char hero_color, int level_difficulty) {
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
-    int width, height;
+    int width, height, num_rooms;    
     getmaxyx(stdscr, height, width);
 
-    // تخصیص حافظه برای نقشه
-    char **map = (char **)malloc(height * sizeof(char *));
-    for (int i = 0; i < height; i++) {
-        map[i] = (char *)malloc(width * sizeof(char));
-    }
-    load_map_from_binary_file(&map, &height, &width);
+
+    char **map;
+    int **map_visited;
+    Room *rooms;
     Player player;
+
+    // بارگذاری اطلاعات بازی
+    load_game_from_binary_file(&map, &height, &width, &rooms, &num_rooms, &player, &map_visited);
+
+    // تنظیم رنگ بازیکن
     player.color = hero_color;
-    display_whole_map(map, width, height, player);
-    refresh();
 
+    // متغیر برای وضعیت بازی
+    bool game_running = true;
 
+    // حلقه اصلی بازی
+    while (game_running) {
+        // ذخیره وضعیت خانه قبلی
+        char previous_cell = map[player.y][player.x];
+        map_visited[player.y][player.x] = 1;
+
+        // رسم بازیکن روی نقشه
+        map[player.y][player.x] = '@';
+
+        // نمایش نقشه
+        clear();
+        display_map(map, width, height, player, rooms, num_rooms, map_visited);
+        refresh();
+
+        // دریافت ورودی از کاربر
+        int ch = getch();
+
+        // پاک کردن موقعیت قبلی بازیکن از نقشه
+        map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
+
+        // مدیریت ورودی‌ها
+        switch (ch) {
+            case KEY_UP:
+                if (player.y > 0 && (map[player.y - 1][player.x] == '.' || map[player.y - 1][player.x] == '#' || map[player.y - 1][player.x] == '+')){
+                    player.y--;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '-';
+                }
+                    
+                break;
+            case KEY_DOWN:
+                if (player.y < height - 1 && (map[player.y + 1][player.x] == '.' || map[player.y + 1][player.x] == '#' || map[player.y + 1][player.x] == '+')){
+                    player.y++;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '+';
+                }
+                    
+                break;
+            case KEY_LEFT:
+                if (player.x > 0 && (map[player.y][player.x - 1] == '.' || map[player.y][player.x - 1] == '#' || map[player.y][player.x - 1] == '+')){
+                    player.x--;
+                    player.direction[0] = 'x';
+                    player.direction[1] = '-';
+                }
+                   
+                break;
+            case KEY_RIGHT:
+                if (player.x < width - 1 && (map[player.y][player.x + 1] == '.' || map[player.y][player.x + 1] == '#' || map[player.y][player.x + 1] == '+')){
+                    player.x++;
+                    player.direction[0] = 'x';
+                    player.direction[1] = '+';
+                }
+                break;
+            case 'q': // خروج از بازی
+                game_running = false; // پایان حلقه
+                break;
+        }
+    }
+
+    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited);
+
+    // آزاد کردن حافظه
+    for (int i = 0; i < height; i++) {
+        free(map[i]);
+    }
+    free(map);
+    free(rooms);
 }
+
 void Scoreboard(){
 
 }
@@ -192,7 +301,7 @@ void new_game(char hero_color, int level_difficulty) {
         }
     }
 
-    save_map_to_binary_file(map, height, width);
+    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited);
 
 
     // آزاد کردن حافظه نقشه

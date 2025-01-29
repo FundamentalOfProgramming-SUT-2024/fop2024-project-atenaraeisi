@@ -11,6 +11,19 @@
 
 user *user1 = NULL;
 
+// تابع برای افزودن یک کاربر جدید به فایل
+void save_user(user *new_user) {
+    FILE *file = fopen("users.bin", "ab"); // "ab" برای افزودن به فایل باینری
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    // ذخیره محتوای ساختاری که پوینتر به آن اشاره می‌کند
+    fwrite(new_user, sizeof(user), 1, file); 
+    fclose(file);
+}
+
 void creat_account(int rows, int cols){
     echo();
     clear();
@@ -47,11 +60,11 @@ void creat_account(int rows, int cols){
     printw("Enter your password: ");
     refresh();
     getstr(user1->password);
-    while(strlen(user1->password)<7 || !check_to_create_password(user1->password)){
+    while(strlen(user1->password) < 7 || !check_to_create_password(user1->password)){
         attron(COLOR_PAIR(2));
         // ایجاد پنجره برای پیام‌ها
-        WINDOW *msg_win = newwin(4, 30, 2*rows/3, (cols - 30)/2);
-        show_message(msg_win, "Password must have at least 7 characters,1 capital letter, 1 small letter and 1 number!");
+        WINDOW *msg_win = newwin(7, 35, 2*rows/3, (cols - 35)/2);
+        show_message(msg_win, "Password must have at least 7\n characters,1 capital letter,\n 1 small letter and 1 number!");
         wrefresh(msg_win);
         // مکث برای مشاهده پیام
         sleep(1);
@@ -97,7 +110,13 @@ void creat_account(int rows, int cols){
         refresh();
         getstr(user1->email);
     }
+    user1->rank = 0;
+    user1->points = 0;
+    user1->golds = 0;
+    user1->times_played = 0;
 
+    save_user(user1);
+    
     FILE* users_info = fopen("users_info.txt", "a");
 
     fprintf(users_info, "%s: %s: %s\n", user1->UserName, user1->password, user1->email);

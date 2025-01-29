@@ -10,6 +10,7 @@
 #include <time.h>
 #include "game.h"
 #include "startup.h"
+#include "menu.h"
 #include "create_map.h"
 
 void show_message(WINDOW *msg_win, const char *message) {
@@ -113,7 +114,7 @@ void show_profile(){
 
 }
 
-void continue_game(char hero_color, int level_difficulty) {
+void continue_game() {
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
     int width, height, num_rooms;    
@@ -206,12 +207,9 @@ void continue_game(char hero_color, int level_difficulty) {
     free(rooms);
 }
 
-void Scoreboard(){
+void new_game() {
+    user1->times_played++;
 
-}
-
-
-void new_game(char hero_color, int level_difficulty) {
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
     int width, height;
@@ -231,6 +229,8 @@ void new_game(char hero_color, int level_difficulty) {
     }
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     
+    int num_regular_rooms = num_rooms / 2; 
+
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, rooms, num_rooms);
 
@@ -358,4 +358,36 @@ void new_game(char hero_color, int level_difficulty) {
         free(map[i]);
     }
     free(map);
+}
+
+// تابع برای خواندن تمام کاربران از فایل
+void load_users() {
+    FILE *file = fopen("users.bin", "rb"); // "rb" برای خواندن فایل باینری
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    user temp_user;
+    mvprintw(1,1, "Saved Users:\n");
+    refresh();
+    int i = 0;
+    while (fread(&temp_user, sizeof(user), 1, file)) { // خواندن هر کاربر از فایل
+        i+=7;
+        mvprintw(2 + i, 1, "Username: %s\n", temp_user.UserName);
+        mvprintw(3 + i, 1, "Email: %s\n", temp_user.email);
+        mvprintw(4 + i, 1, "Rank: %d\n", temp_user.rank);
+        mvprintw(5 + i, 1, "Points: %d\n", temp_user.points);
+        mvprintw(6 + i, 1, "Golds: %d\n", temp_user.golds);
+        mvprintw(7 + i, 1, "Times Played: %d\n", temp_user.times_played);
+        mvprintw(8 + i, 1, "-----------------------------\n");
+        refresh();
+    }
+    sleep(5);
+
+    fclose(file);
+}
+
+void Scoreboard(){
+    load_users();
 }

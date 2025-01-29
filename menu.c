@@ -108,18 +108,18 @@ void GameMenu(int rows, int cols){
 
     switch (selected){
         case 0:
-            new_game(hero_color, level_difficulty);
+            new_game();
             GameMenu(rows, cols);
             break;
 
         case 1:
-            continue_game(hero_color, level_difficulty);
+            continue_game();
             GameMenu(rows, cols);
             break;
         
         case 2:
             Scoreboard();
-            // GameMenu(rows, cols);
+            GameMenu(rows, cols);
             break;
 
         case 3:
@@ -130,7 +130,7 @@ void GameMenu(int rows, int cols){
 
         case 4:
             show_profile();
-            // GameMenu(rows, cols);
+            GameMenu(rows, cols);
             break;
         case 5:
             break;

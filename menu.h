@@ -2,9 +2,13 @@
 #define MENU_H
 
 typedef struct user{
-    char UserName[50];
-    char password[50];
-    char email[50];
+    char UserName[100];
+    char password[100];
+    char email[100];
+    int rank;
+    int points;
+    int golds;
+    int times_played;
 }user;
 
 extern user *user1; 

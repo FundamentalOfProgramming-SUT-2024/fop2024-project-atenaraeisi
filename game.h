@@ -21,8 +21,8 @@ typedef struct {
 } Room;
 
 void show_profile();
-void new_game(char hero_color, int level_difficulty);
-void continue_game(char hero_color, int level_difficulty);
+void new_game();
+void continue_game();
 void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int num_rooms, Player *player,  int **map_visited);
 void load_game_from_binary_file(char ***map, int *rows, int *cols, Room **rooms, int *num_rooms, Player *player, int ***map_visited);
 void Scoreboard();

@@ -132,6 +132,7 @@ void continue_game() {
     // تنظیم رنگ بازیکن
     player.color = hero_color;
 
+    int display_completely = 0;
     // متغیر برای وضعیت بازی
     bool game_running = true;
 
@@ -146,8 +147,11 @@ void continue_game() {
 
         // نمایش نقشه
         clear();
-        display_map(map, width, height, player, rooms, num_rooms, map_visited);
-        refresh();
+        if(display_completely){
+            display_whole_map(map, width, height, player);
+        } else{
+            display_map(map, width, height, player, rooms, num_rooms, map_visited);
+        }        refresh();
 
         // دریافت ورودی از کاربر
         int ch = getch();
@@ -186,6 +190,46 @@ void continue_game() {
                     player.x++;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
+                }
+                break;
+            case KEY_PPAGE:
+                if (player.y > 0 && player.x < width - 1 && (map[player.y-1][player.x + 1] == '.' || map[player.y-1][player.x + 1] == '#' || map[player.y-1][player.x + 1] == '+')){
+                    player.x++;
+                    player.y--;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '-';
+                }
+                break;
+            case KEY_NPAGE:
+                if (player.y < height - 1 && player.x < width - 1 && (map[player.y + 1][player.x + 1] == '.' || map[player.y + 1][player.x + 1] == '#' || map[player.y + 1][player.x + 1] == '+')){
+                    player.x++;
+                    player.y++;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '+';
+                }
+                break;
+            case KEY_HOME:
+                if (player.y > 0 && player.x > 0 && (map[player.y - 1][player.x - 1] == '.' || map[player.y - 1][player.x - 1] == '#' || map[player.y - 1][player.x - 1] == '+')){
+                    player.x--;
+                    player.y--;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '-';
+                }
+                break;
+            case KEY_END:
+                if (player.y < height - 1 && player.x > 0 && (map[player.y + 1][player.x - 1] == '.' || map[player.y + 1][player.x - 1] == '#' || map[player.y + 1][player.x - 1] == '+')){
+                    player.x--;
+                    player.y++;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '+';
+                }
+                break;
+            case 'M': 
+            case 'm':
+                if(display_completely){
+                    display_completely = 0;
+                } else{
+                    display_completely = 1;
                 }
                 break;
             case 'q': // خروج از بازی
@@ -228,6 +272,18 @@ void new_game() {
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     
     int num_regular_rooms = num_rooms / 2; 
+    int num_treasure_rooms = 1, num_enchant_rooms = 1, num_nightmare_rooms = 1;
+    while(num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms){
+        num_enchant_rooms++;
+    }
+    for(int i = 0 ; i < num_regular_rooms ; i++){
+        rooms[i].theme = 'r'; //regular rooms
+    }
+    rooms[num_regular_rooms] = 't'; //treasure room
+    for(int i = num_regular_rooms+1 ; i < num_regular_rooms + 1 + num_enchant_rooms ; i++){
+        rooms[i].theme = 'e'; //enchant rooms
+    }
+    rooms[num_regular_rooms + 1 + num_enchant_rooms] = 'n'; //nightmare rooms
 
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, rooms, num_rooms);
@@ -252,6 +308,7 @@ void new_game() {
         player.y = rooms[0].start_y + rooms[0].height  -1 - rand() % 5;
     }
 
+    int display_completely = 0;
     bool game_running = true;
 
     // حلقه اصلی بازی
@@ -265,7 +322,11 @@ void new_game() {
 
         // نمایش نقشه
         clear();
-        display_map(map, width, height, player, rooms, num_rooms, map_visited);
+        if(display_completely){
+            display_whole_map(map, width, height, player);
+        } else{
+            display_map(map, width, height, player, rooms, num_rooms, map_visited);
+        }
         refresh();
 
         // دریافت ورودی از کاربر
@@ -337,6 +398,14 @@ void new_game() {
                     player.y++;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
+                }
+                break;
+            case 'M': 
+            case 'm':
+                if(display_completely){
+                    display_completely = 0;
+                } else{
+                    display_completely = 1;
                 }
                 break;
             case 'q': // خروج از بازی

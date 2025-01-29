@@ -209,7 +209,9 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                         attron(COLOR_PAIR(1));
                         mvprintw(y, x, "o");
                         attroff(COLOR_PAIR(1));
-                    }
+                    } else if (map[y][x] == '=') { // در اتاق
+                        mvprintw(y, x, "=");
+                    } 
                 }
             }
         }

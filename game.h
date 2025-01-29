@@ -7,6 +7,7 @@ typedef struct{
     int x;
     int y;
     char color;
+    char direction[2];
 }Player;
 
 

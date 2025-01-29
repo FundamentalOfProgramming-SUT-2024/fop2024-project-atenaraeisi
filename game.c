@@ -102,20 +102,35 @@ void new_game(char hero_color, int level_difficulty) {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && (map[player.y - 1][player.x] == '.' || map[player.y - 1][player.x] == '#' || map[player.y - 1][player.x] == '+'))
+                if (player.y > 0 && (map[player.y - 1][player.x] == '.' || map[player.y - 1][player.x] == '#' || map[player.y - 1][player.x] == '+')){
                     player.y--;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '-';
+                }
+                    
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && (map[player.y + 1][player.x] == '.' || map[player.y + 1][player.x] == '#' || map[player.y + 1][player.x] == '+'))
+                if (player.y < height - 1 && (map[player.y + 1][player.x] == '.' || map[player.y + 1][player.x] == '#' || map[player.y + 1][player.x] == '+')){
                     player.y++;
+                    player.direction[0] = 'y';
+                    player.direction[1] = '+';
+                }
+                    
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && (map[player.y][player.x - 1] == '.' || map[player.y][player.x - 1] == '#' || map[player.y][player.x - 1] == '+'))
+                if (player.x > 0 && (map[player.y][player.x - 1] == '.' || map[player.y][player.x - 1] == '#' || map[player.y][player.x - 1] == '+')){
                     player.x--;
+                    player.direction[0] = 'x';
+                    player.direction[1] = '-';
+                }
+                   
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && (map[player.y][player.x + 1] == '.' || map[player.y][player.x + 1] == '#' || map[player.y][player.x + 1] == '+'))
+                if (player.x < width - 1 && (map[player.y][player.x + 1] == '.' || map[player.y][player.x + 1] == '#' || map[player.y][player.x + 1] == '+')){
                     player.x++;
+                    player.direction[0] = 'x';
+                    player.direction[1] = '+';
+                }
                 break;
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
@@ -123,9 +138,9 @@ void new_game(char hero_color, int level_difficulty) {
         }
     }
 
-    // // آزاد کردن حافظه نقشه
-    // for (int i = 0; i < height; i++) {
-    //     free(map[i]);
-    // }
-    // free(map);
+    // آزاد کردن حافظه نقشه
+    for (int i = 0; i < height; i++) {
+        free(map[i]);
+    }
+    free(map);
 }

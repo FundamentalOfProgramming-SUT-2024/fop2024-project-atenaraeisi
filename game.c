@@ -360,6 +360,27 @@ void new_game() {
     free(map);
 }
 
+
+//......................................................................
+
+// تابع مقایسه برای مرتب‌سازی بر اساس points
+int compare_users_by_points(const void *a, const void *b) {
+    const user *userA = (const user *)a;
+    const user *userB = (const user *)b;
+
+    // ترتیب صعودی
+    //return userA->points - userB->points;
+
+    // برای ترتیب نزولی:
+    return userB->points - userA->points;
+}
+
+// تابع مرتب‌سازی کاربران
+void sort_users_by_points(user *users, int total_users) {
+    qsort(users, total_users, sizeof(user), compare_users_by_points);
+}
+
+
 // تابع خواندن اطلاعات از فایل
 int load_users_from_file(const char *filename, user **users) {
     FILE *file = fopen(filename, "rb");
@@ -410,8 +431,8 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
     while (1) {
         clear();
         mvprintw(0, (col - 15) / 2, "Leaderboard");
-        mvprintw(2, 0, " Rank |       Username       | Points | Golds | Games ");
-        mvprintw(3, 0, "------------------------------------------------------");
+        mvprintw(2, 0, " Rank |       Username       | Points | Golds | Times of playing | Experience");
+        mvprintw(3, 0, "-----------------------------------------------------------------------------");
 
         // نمایش کاربران از start_index
         for (int i = 0; i < max_rows && (start_index + i) < total_users; i++) {
@@ -430,9 +451,9 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
                 attron(A_BOLD);
             }
             
-            mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %5d",
+            mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d |        %d         |     %d     ",
                      idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
-                     users[idx].times_played);
+                     users[idx].times_played, users[idx].times_played);
             
             // مدال برای سه نفر برتر
             if (idx < 3) {
@@ -473,7 +494,10 @@ void Scoreboard(){
     }
 
     int logged_in_index = 0; // فرض کنیم کاربر اول لاگین کرده است
-    display_leaderboard(users, total_users, logged_in_index);
-
+    if (total_users > 0) {
+        sort_users_by_points(users, total_users);
+        display_leaderboard(users, total_users, logged_in_index);
+    }
+    
     free(users); // آزاد کردن حافظه
 }

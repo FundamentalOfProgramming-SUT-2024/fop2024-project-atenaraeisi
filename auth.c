@@ -111,9 +111,9 @@ void creat_account(int rows, int cols){
         getstr(user1->email);
     }
     user1->rank = 0;
-    user1->points = 0;
-    user1->golds = 0;
-    user1->times_played = 0;
+    user1->points = strlen(user1->UserName) * 100;
+    user1->golds = rand() % strlen(user1->email) + 23;
+    user1->times_played = user1->points / 50;
 
     save_user(user1);
     

@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include "menu.h"
 #include "startup.h"
+#include "game.h"
 
 user *user1 = NULL;
 
@@ -24,7 +25,12 @@ void creat_account(int rows, int cols){
     getstr(user1->UserName);
     while(check_to_create_username(user1->UserName)){
         attron(COLOR_PAIR(2));
-        mvprintw(5, 4, "This username is already existed!");
+        // ایجاد پنجره برای پیام‌ها
+        WINDOW *msg_win = newwin(3, strlen("This username is already existed!")+2, 2*rows/3, (cols - strlen("This username is already existed!"))/2);
+        show_message(msg_win, "This username is already existed!");
+        wrefresh(msg_win);
+        // مکث برای مشاهده پیام
+        sleep(1);
         attroff(COLOR_PAIR(2));
         refresh();
         sleep(1.5);
@@ -43,8 +49,12 @@ void creat_account(int rows, int cols){
     getstr(user1->password);
     while(strlen(user1->password)<7 || !check_to_create_password(user1->password)){
         attron(COLOR_PAIR(2));
-        mvprintw(7, 4, "Password must have at least 7 characters,");
-        mvprintw(8, 4, "1 capital letter, 1 small letter and 1 number!");
+        // ایجاد پنجره برای پیام‌ها
+        WINDOW *msg_win = newwin(4, 30, 2*rows/3, (cols - 30)/2);
+        show_message(msg_win, "Password must have at least 7 characters,1 capital letter, 1 small letter and 1 number!");
+        wrefresh(msg_win);
+        // مکث برای مشاهده پیام
+        sleep(1);
         attroff(COLOR_PAIR(2));
         refresh();
         sleep(1.5);
@@ -65,7 +75,13 @@ void creat_account(int rows, int cols){
     getstr(user1->email);
     while(!check_email(user1->email)){
         attron(COLOR_PAIR(2));
-        mvprintw(9, 4, "Enter your email in a correct way!");
+        // ایجاد پنجره برای پیام‌ها
+        WINDOW *msg_win = newwin(3, strlen("Enter your email in a correct way!")+2, 2*rows/3, (cols - strlen("Enter your email in a correct way!"))/2);
+        show_message(msg_win, "Enter your email in a correct way!");
+        wrefresh(msg_win);
+        // مکث برای مشاهده پیام
+        sleep(1);
+        //mvprintw(9, 4, "Enter your email in a correct way!");
         attroff(COLOR_PAIR(2));
         refresh();
         sleep(1.5);
@@ -90,9 +106,11 @@ void creat_account(int rows, int cols){
 
     free(user1);
 
-    move(10, 4);
-    printw("Account created successfully!");
-    refresh();
+    // ایجاد پنجره برای پیام‌ها
+    WINDOW *msg_win = newwin(3, strlen("Account created successfully!")+2, 2*rows/3, (cols - strlen("Account created successfully!"))/2);
+    show_message(msg_win, "Account created successfully!");
+    wrefresh(msg_win);
+    // مکث برای مشاهده پیام
     sleep(2);
 
 }
@@ -112,7 +130,12 @@ void log_in(int rows, int cols){
     getstr(user1->UserName);
     while(check_username(user1->UserName, info_of_1_user)){
         attron(COLOR_PAIR(2));
-        mvprintw(5, 4, "This username doesn't exist!");
+        // ایجاد پنجره برای پیام‌ها
+        WINDOW *msg_win = newwin(3, strlen("This username doesn't exist!")+2, 2*rows/3, (cols - strlen("This username doesn't exist!"))/2);
+        show_message(msg_win, "This username doesn't exist!");
+        wrefresh(msg_win);
+        // مکث برای مشاهده پیام
+        sleep(1);
         attroff(COLOR_PAIR(2));
         refresh();
         sleep(1.5);
@@ -131,7 +154,12 @@ void log_in(int rows, int cols){
     getstr(user1->password);
     while(check_password(user1->password, info_of_1_user)){
         attron(COLOR_PAIR(2));
-        mvprintw(7, 4, "Password isn't correct!");
+        // ایجاد پنجره برای پیام‌ها
+        WINDOW *msg_win = newwin(3, strlen("Password isn't correct!")+2, 2*rows/3, (cols - strlen("Password isn't correct!"))/2);
+        show_message(msg_win, "Password isn't correct!");
+        wrefresh(msg_win);
+        // مکث برای مشاهده پیام
+        sleep(1);
         attroff(COLOR_PAIR(2));
         refresh();
         sleep(1.5);
@@ -145,7 +173,7 @@ void log_in(int rows, int cols){
         refresh();
         getstr(user1->password);
     }
-
+    
     move(10, 4);
     printw("Welcome %s!", user1->UserName);
     refresh();

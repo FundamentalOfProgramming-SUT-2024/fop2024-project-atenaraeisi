@@ -14,9 +14,19 @@
 
 void show_message(WINDOW *msg_win, const char *message) {
     wclear(msg_win); // پاک کردن محتوای قبلی پنجره
+    box(msg_win, 0, 0); // افزودن کادر دور پنجره
     mvwprintw(msg_win, 1, 1, "%s", message); // نوشتن پیام جدید
     wrefresh(msg_win); // به‌روزرسانی پنجره
 }
+
+/*
+        // ایجاد پنجره برای پیام‌ها
+        WINDOW *msg_win = newwin(3, 50, 1, 1);
+        show_message(msg_win, "Game saved successfully!");
+        wrefresh(msg_win);
+        // مکث برای مشاهده پیام
+        sleep(2);
+*/
 
 //int height = 3, width = 50, start_y = 1, start_x = 1;
     // ایجاد پنجره برای پیام‌ها

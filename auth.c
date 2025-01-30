@@ -129,7 +129,7 @@ void creat_account(int rows, int cols){
     show_message(msg_win, "Account created successfully!");
     wrefresh(msg_win);
     // مکث برای مشاهده پیام
-    sleep(2);
+    sleep(1.2);
 
 }
 

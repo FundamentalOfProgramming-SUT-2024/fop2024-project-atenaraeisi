@@ -8,6 +8,7 @@
 #include "create_map.h"
 #include "game.h"
 
+int floor_of_room = 0;
 
 bool is_valid_position(char **map, int x, int y) {
     return map[y][x] == '.';
@@ -67,6 +68,7 @@ void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
 
 
 char **create_map(int width, int height, int level_difficulty, Room *rooms, int num_rooms) {
+    floor_of_room++;
     // تخصیص حافظه برای نقشه
     char **map = (char **)malloc(height * sizeof(char *));
     for (int i = 0; i < height; i++) {
@@ -140,9 +142,29 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
         prev_center_x = center_x;
         prev_center_y = center_y;
     }
-
+    rooms[0].visited = 1;
+    //تم بندی اتاق ها
+    int num_regular_rooms = num_rooms / 2; 
+    int num_treasure_rooms = 0, num_enchant_rooms = 1, num_nightmare_rooms = 1;
+    if(floor_of_room == 5){
+        num_treasure_rooms = 1;
+    }
+    while(num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms){
+        num_enchant_rooms++;
+    }
+    for(int i = 0 ; i < num_regular_rooms ; i++){
+        rooms[i].theme = 'r'; //regular rooms
+    }
+    if(floor_of_room == 5){
+        rooms[num_regular_rooms].theme = 't'; //treasure room
+    }
+    for(int i = num_regular_rooms + num_treasure_rooms ; i < num_regular_rooms + 1 + num_enchant_rooms ; i++){
+        rooms[i].theme = 'e'; //enchant rooms
+    }
+    rooms[num_regular_rooms + num_treasure_rooms + num_enchant_rooms].theme = 'n'; //nightmare rooms
+    //گذاشتن چیز میزای دیگه تو اتاقا
     for(int i = 0; i < num_rooms ; i++){
-    //پنجره داخل هر اتاق به طور تصادفی
+        //پنجره داخل هر اتاق به طور تصادفی
         int num_window = rand() % 2;
         for(int j = 0 ; j < num_window ; j++){
             int win_x = rooms[i].start_x;
@@ -167,22 +189,42 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
             }
             map[obs_y][obs_x] = 'o';
         }
+        int num_traps, num_talisman, num_gold;
+        if(rooms[i].theme == 'r'){
+            num_gold = 2;
+            for(int j = 0 ; j < num_gold ; j++){
+                int gold_x = rooms[i].start_x + rand() % (rooms[i].width);
+                int gold_y = rooms[i].start_y + rand() % (rooms[i].height);
+                while(map[gold_y][gold_x] != '.'){
+                    gold_x = rooms[i].start_x + rand() % (rooms[i].width);
+                    gold_y = rooms[i].start_y + rand() % (rooms[i].height);
+                }
+                map[gold_y][gold_x] = 'g';
+            }
+            num_talisman = rand() % 2;
+            for(int j = 0 ; j < num_talisman ; j++){
+                int talism_x = rooms[i].start_x + rand() % (rooms[i].width);
+                int talism_y = rooms[i].start_y + rand() % (rooms[i].height);
+                while(map[talism_y][talism_x] != '.'){
+                    talism_x = rooms[i].start_x + rand() % (rooms[i].width);
+                    talism_y = rooms[i].start_y + rand() % (rooms[i].height);
+                }
+                map[talism_y][talism_x] = 't';
+            }
+            num_traps = rand() % 2;
+            for(int j = 0 ; j < num_traps ; j++){
+                int trap_x = rooms[i].start_x + rand() % (rooms[i].width);
+                int trap_y = rooms[i].start_y + rand() % (rooms[i].height);
+                while(map[trap_y][trap_x] != '.'){
+                    trap_x = rooms[i].start_x + rand() % (rooms[i].width);
+                    trap_y = rooms[i].start_y + rand() % (rooms[i].height);
+                }
+                map[trap_y][trap_x] = 'y';
+            }
+        }
         
     }
-    rooms[0].visited = 1;
-    int num_regular_rooms = num_rooms / 2; 
-    int num_treasure_rooms = 1, num_enchant_rooms = 1, num_nightmare_rooms = 1;
-    while(num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms){
-        num_enchant_rooms++;
-    }
-    for(int i = 0 ; i < num_regular_rooms ; i++){
-        rooms[i].theme = 'r'; //regular rooms
-    }
-    rooms[num_regular_rooms].theme = 't'; //treasure room
-    for(int i = num_regular_rooms+1 ; i < num_regular_rooms + 1 + num_enchant_rooms ; i++){
-        rooms[i].theme = 'e'; //enchant rooms
-    }
-    rooms[num_regular_rooms + 1 + num_enchant_rooms].theme = 'n'; //nightmare rooms
+
 
     return map;
 }
@@ -280,7 +322,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                     attroff(COLOR_PAIR(3));
                 }
             }
-            if (map_visited[j][i] == 1 && map[j][i] == '#'){
+            if (map_visited[j][i] == 1 && (map[j][i] == '#')){
                 mvprintw(j, i, "%c", map[j][i]);
             }
         }

@@ -148,7 +148,7 @@ void continue_game() {
         // نمایش نقشه
         clear();
         if(display_completely){
-            display_whole_map(map, width, height, player);
+            display_whole_map(map, width, height, player, rooms, num_rooms);
         } else{
             display_map(map, width, height, player, rooms, num_rooms, map_visited);
         }        refresh();
@@ -271,20 +271,6 @@ void new_game() {
     }
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     
-    int num_regular_rooms = num_rooms / 2; 
-    int num_treasure_rooms = 1, num_enchant_rooms = 1, num_nightmare_rooms = 1;
-    while(num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms){
-        num_enchant_rooms++;
-    }
-    for(int i = 0 ; i < num_regular_rooms ; i++){
-        rooms[i].theme = 'r'; //regular rooms
-    }
-    rooms[num_regular_rooms] = 't'; //treasure room
-    for(int i = num_regular_rooms+1 ; i < num_regular_rooms + 1 + num_enchant_rooms ; i++){
-        rooms[i].theme = 'e'; //enchant rooms
-    }
-    rooms[num_regular_rooms + 1 + num_enchant_rooms] = 'n'; //nightmare rooms
-
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, rooms, num_rooms);
 
@@ -323,7 +309,7 @@ void new_game() {
         // نمایش نقشه
         clear();
         if(display_completely){
-            display_whole_map(map, width, height, player);
+            display_whole_map(map, width, height, player, rooms, num_rooms);
         } else{
             display_map(map, width, height, player, rooms, num_rooms, map_visited);
         }

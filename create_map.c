@@ -169,12 +169,29 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
         }
     }
     rooms[0].visited = 1;
+    int num_regular_rooms = num_rooms / 2; 
+    int num_treasure_rooms = 1, num_enchant_rooms = 1, num_nightmare_rooms = 1;
+    while(num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms){
+        num_enchant_rooms++;
+    }
+    for(int i = 0 ; i < num_regular_rooms ; i++){
+        rooms[i].theme = 'r'; //regular rooms
+    }
+    rooms[num_regular_rooms].theme = 't'; //treasure room
+    for(int i = num_regular_rooms+1 ; i < num_regular_rooms + 1 + num_enchant_rooms ; i++){
+        rooms[i].theme = 'e'; //enchant rooms
+    }
+    rooms[num_regular_rooms + 1 + num_enchant_rooms].theme = 'n'; //nightmare rooms
 
     return map;
 }
 
 void display_map(char **map, int width, int height, Player player, Room *rooms, int num_rooms, int **map_visited ) {
     start_color();
+    init_pair(140,140,COLOR_BLACK);
+    init_pair(178, 178, COLOR_BLACK);
+    init_pair(25, 25, COLOR_BLACK);
+    init_pair(95, 95, COLOR_BLACK);
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
@@ -196,6 +213,15 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
     // حلقه برای نمایش اتاق‌ها که بازدید شده‌اند
     for (int r = 0; r < num_rooms; r++) {
         if (rooms[r].visited == 1) { // فقط اتاق‌های بازدید شده
+            if(rooms[r].theme == 'r'){
+                attron(COLOR_PAIR(140));
+            } else if(rooms[r].theme == 't'){
+                attron(COLOR_PAIR(178));
+            } else if(rooms[r].theme == 'e'){
+                attron(COLOR_PAIR(25));
+            } else if(rooms[r].theme == 'n'){
+                attron(COLOR_PAIR(95));
+            }
             // نمایش دیوارهای اتاق
             for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
                 for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
@@ -209,10 +235,28 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                         attron(COLOR_PAIR(1));
                         mvprintw(y, x, "o");
                         attroff(COLOR_PAIR(1));
+                        if(rooms[r].theme == 'r'){
+                            attron(COLOR_PAIR(140));
+                        } else if(rooms[r].theme == 't'){
+                            attron(COLOR_PAIR(178));
+                        } else if(rooms[r].theme == 'e'){
+                            attron(COLOR_PAIR(25));
+                        } else if(rooms[r].theme == 'n'){
+                            attron(COLOR_PAIR(95));
+                        }
                     } else if (map[y][x] == '=') { // در اتاق
                         mvprintw(y, x, "=");
                     } 
                 }
+            }
+            if(rooms[r].theme == 'r'){
+                attroff(COLOR_PAIR(140));
+            } else if(rooms[r].theme == 't'){
+                attroff(COLOR_PAIR(178));
+            } else if(rooms[r].theme == 'e'){
+                attroff(COLOR_PAIR(25));
+            } else if(rooms[r].theme == 'n'){
+                attroff(COLOR_PAIR(95));
             }
         }
     }
@@ -289,39 +333,88 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
     }
 }
 
-void display_whole_map(char ** map, int width, int height, Player player){
+void display_whole_map(char ** map, int width, int height, Player player, Room *rooms, int num_rooms){
     start_color();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
     init_pair(4, COLOR_GREEN, COLOR_BLACK);
+    init_pair(140,140,COLOR_BLACK);
+    init_pair(178, 178, COLOR_BLACK);
+    init_pair(25, 25, COLOR_BLACK);
+    init_pair(95, 95, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️"};
 
-    for(int i=0 ; i<width; i++){
-        for(int j=0 ; j<height ; j++){
-            if(map[j][i]=='@'){
-                // int num_of_emoji = rand() % 3;
-                // mvprintw(j, i, "%s", emojis[num_of_emoji]);
-                if(player.color == 'r'){
+    for (int r = 0; r < num_rooms; r++) {
+        if(rooms[r].theme == 'r'){
+            attron(COLOR_PAIR(140));
+        } else if(rooms[r].theme == 't'){
+            attron(COLOR_PAIR(178));
+        } else if(rooms[r].theme == 'e'){
+            attron(COLOR_PAIR(25));
+        } else if(rooms[r].theme == 'n'){
+            attron(COLOR_PAIR(95));
+        }
+        // نمایش دیوارهای اتاق
+        for (int y = rooms[r].start_y; y < rooms[r].start_y + rooms[r].height; y++) {
+            for (int x = rooms[r].start_x; x < rooms[r].start_x + rooms[r].width; x++) {
+                if (map[y][x] == '|' || map[y][x] == '_') { // دیوارهای اتاق
+                    mvprintw(y, x, "%c", map[y][x]);
+                } else if (map[y][x] == '.') { // فضای خالی اتاق
+                    mvprintw(y, x, ".");
+                } else if (map[y][x] == '+') { // در اتاق
+                    mvprintw(y, x, "+");
+                } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
+                    attron(COLOR_PAIR(1));
+                    mvprintw(y, x, "o");
+                    attroff(COLOR_PAIR(1));
+                    if(rooms[r].theme == 'r'){
+                        attron(COLOR_PAIR(140));
+                    } else if(rooms[r].theme == 't'){
+                        attron(COLOR_PAIR(178));
+                    } else if(rooms[r].theme == 'e'){
+                        attron(COLOR_PAIR(25));
+                    } else if(rooms[r].theme == 'n'){
+                        attron(COLOR_PAIR(95));
+                    }
+                } else if (map[y][x] == '=') { // در اتاق
+                    mvprintw(y, x, "=");
+                } 
+            }
+        }
+        if(rooms[r].theme == 'r'){
+            attroff(COLOR_PAIR(140));
+        } else if(rooms[r].theme == 't'){
+            attroff(COLOR_PAIR(178));
+        } else if(rooms[r].theme == 'e'){
+            attroff(COLOR_PAIR(25));
+        } else if(rooms[r].theme == 'n'){
+            attroff(COLOR_PAIR(95));
+        }
+    
+    }
+
+        // نمایش برای چیزهای دیگری که دیده شده و خود کاراکتر اصلی
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            if (map[j][i] == '@') { // نمایش بازیکن
+                if (player.color == 'r') {
                     attron(COLOR_PAIR(2));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(2));
-                }else if(player.color == 'g'){
+                } else if (player.color == 'g') {
                     attron(COLOR_PAIR(4));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(4));
-                } else if(player.color == 'b'){
+                } else if (player.color == 'b') {
                     attron(COLOR_PAIR(3));
                     mvprintw(j, i, "@");
                     attroff(COLOR_PAIR(3));
                 }
             }
-            else if(map[j][i]=='o'){
-                attron(COLOR_PAIR(1));
-                mvprintw(j, i, "o");
-                attroff(COLOR_PAIR(1));
+            if (map[j][i] == '#'){
+                mvprintw(j, i, "%c", map[j][i]);
             }
-            else mvprintw(j, i , "%c", map[j][i]);
         }
     }
     

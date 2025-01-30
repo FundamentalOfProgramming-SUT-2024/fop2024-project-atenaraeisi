@@ -114,22 +114,6 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
             continue;
         }
         
-        //موانع داخل هر اتاق به طور تصادفی
-        int num_obstacle = room.height/3 + rand() % 2;
-        for(int j = 0 ; j < num_obstacle ; j++){
-            int obs_x = room.start_x + room.width/3 + rand() % (room.width/3);
-            int obs_y = room.start_y + room.height/3 + rand() % (room.height/3);
-            while(map[obs_y][obs_x] != '.' 
-                || (obs_y+1 > 0 && obs_y+1 < height && map[obs_y+1][obs_x] == '+') 
-                || (obs_y-1 > 0 && obs_y-1 < height && map[obs_y-1][obs_x] == '+') 
-                || (obs_x+1 > 0 && obs_x+1 < width && map[obs_y][obs_x+1] == '+') 
-                || (obs_x+1 > 0 && obs_x-1 < width && map[obs_y][obs_x-1] == '+')){
-                obs_x = room.start_x + room.width/3 + rand() % (room.width/3);
-                obs_y = room.start_y + room.height/3 + rand() % (room.height/3);
-            }
-            map[obs_y][obs_x] = 'o';
-        }
-        
     }
     //وصل کردن اتاق ها با راهرو
     int prev_center_x = -1, prev_center_y = -1;
@@ -156,8 +140,9 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
         prev_center_x = center_x;
         prev_center_y = center_y;
     }
-    //پنجره داخل هر اتاق به طور تصادفی
+
     for(int i = 0; i < num_rooms ; i++){
+    //پنجره داخل هر اتاق به طور تصادفی
         int num_window = rand() % 2;
         for(int j = 0 ; j < num_window ; j++){
             int win_x = rooms[i].start_x;
@@ -167,6 +152,22 @@ char **create_map(int width, int height, int level_difficulty, Room *rooms, int 
             }
             map[win_y][win_x] = '=';
         }
+        //موانع داخل هر اتاق به طور تصادفی
+        int num_obstacle = rooms[i].height/3 + rand() % 2;
+        for(int j = 0 ; j < num_obstacle ; j++){
+            int obs_x = rooms[i].start_x + rand() % (rooms[i].width);
+            int obs_y = rooms[i].start_y + rand() % (rooms[i].height);
+            while(map[obs_y][obs_x] != '.' 
+                || (map[obs_y+1][obs_x] == '+') 
+                || (map[obs_y-1][obs_x] == '+') 
+                || (map[obs_y][obs_x+1] == '+') 
+                || (map[obs_y][obs_x-1] == '+')){
+                obs_x = rooms[i].start_x + rand() % (rooms[i].width);
+                obs_y = rooms[i].start_y + rand() % (rooms[i].height);
+            }
+            map[obs_y][obs_x] = 'o';
+        }
+        
     }
     rooms[0].visited = 1;
     int num_regular_rooms = num_rooms / 2; 

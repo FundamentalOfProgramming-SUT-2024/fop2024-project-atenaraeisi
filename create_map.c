@@ -11,13 +11,6 @@
 bool is_valid_position(char **map, int x, int y) {
     return map[y][x] == '.';
 }
-// bool is_valid_position(char **map, int x, int y) {
-//     if(map[y][x] == '.' && map[y][x+1] == '.' && map[y+1][x] == '.' && map[y][x-1] == '.' && map[y-1][x] == '.'){
-//         return true;
-//     }
-//     return false;
-// }
-
 
 void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
     int x = x1;
@@ -63,7 +56,6 @@ void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
 
 
 }
-
 
 char **create_map(int width, int height, int level_difficulty, Player* player, Room *rooms, int num_rooms, Food foods[7]) {
     // تخصیص حافظه برای نقشه
@@ -325,6 +317,8 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         foods[i].x = food_x;
         foods[i].y = food_y;
         foods[i].type = 1; // نوع معمولی
+        strcpy(foods[i].name, "normal food");
+        foods[i].restore_hunger = 10;
         map[food_y][food_x] = 'f';
     }
 
@@ -543,12 +537,12 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             attroff(COLOR_PAIR(205));
                             attron(COLOR_PAIR(room_color));
                         } else if(map[y][x] == 'f'){
-                            if(map_visited[y][x] == 0 || player.food_count >= 5){
+                            if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(196));
                                 mvprintw(y, x, "%s", emojis[7]);
                                 attroff(COLOR_PAIR(196));
                                 attron(COLOR_PAIR(room_color));
-                            } else if(map_visited[y][x] == 1 && player.food_count < 6){
+                            } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
                         }

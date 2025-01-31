@@ -12,6 +12,7 @@
 #include "startup.h"
 #include "menu.h"
 #include "create_map.h"
+#define HUNGER_DECREASE_INTERVAL 5 // کاهش گرسنگی هر 5 ثانیه
 
 void show_message(WINDOW *msg_win, const char *message) {
     wclear(msg_win); // پاک کردن محتوای قبلی پنجره
@@ -19,102 +20,106 @@ void show_message(WINDOW *msg_win, const char *message) {
     mvwprintw(msg_win, 1, 1, "%s", message); // نوشتن پیام جدید
     wrefresh(msg_win); // به‌روزرسانی پنجره
 }
-
 /*
-        // ایجاد پنجره برای پیام‌ها
-        WINDOW *msg_win = newwin(3, 50, 1, 1);
-        show_message(msg_win, "Game saved successfully!");
-        wrefresh(msg_win);
-        // مکث برای مشاهده پیام
-        sleep(2);
+    // ایجاد پنجره برای پیام‌ها
+    WINDOW *msg_win = newwin(3, 50, 1, 1);
+    show_message(msg_win, "Game saved successfully!");
+    wrefresh(msg_win);
+    // مکث برای مشاهده پیام
+    sleep(2);
+    //------------------
+    int height = 3, width = 50, start_y = 1, start_x = 1;
+    //ایجاد پنجره برای پیام‌ها
+    WINDOW *msg_win = newwin(height, width, start_y, start_x);
+    wrefresh(msg_win);
 */
 
-//int height = 3, width = 50, start_y = 1, start_x = 1;
-    // ایجاد پنجره برای پیام‌ها
-//WINDOW *msg_win = newwin(height, width, start_y, start_x);
-//wrefresh(msg_win);
-void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int num_rooms, Player *player,  int **map_visited, Food foods[7]) {
-    FILE *file = fopen("previous_game.bin", "wb");
-    if (!file) {
-        perror("Could not open file");
+
+void update_hunger(Player *player) {
+    if (player->hunger > 0) {
+        player->hunger -= 1; // کاهش گرسنگی
+    } else if (player->health > 0) {
+        player->health -= 1; // کاهش سلامتی به دلیل گرسنگی شدید
+    }
+}
+void display_hunger_bar_ncurses(int hunger, int max_hunger, int y, int x) {
+    int bar_length = 20; // طول نوار گرسنگی
+    int filled = (hunger * bar_length) / max_hunger;
+
+    mvprintw(y, x, "Hunger: [");
+    for (int i = 0; i < filled; i++) {
+        printw("#"); // قسمت پر شده
+    }
+    for (int i = filled; i < bar_length; i++) {
+        printw("-"); // قسمت خالی
+    }
+    printw("] %d%%", hunger);
+
+    refresh(); // به‌روزرسانی پنجره
+}
+void display_health_bar_ncurses(int health, int max_health, int y, int x) {
+    int bar_length = 20; // طول نوار گرسنگی
+    int filled = (health * bar_length) / max_health;
+
+    mvprintw(y, x, "Health: [");
+    for (int i = 0; i < filled; i++) {
+        printw("#"); // قسمت پر شده
+    }
+    for (int i = filled; i < bar_length; i++) {
+        printw("-"); // قسمت خالی
+    }
+    printw("] %d%%", health, max_health);
+
+    refresh(); // به‌روزرسانی پنجره
+}
+void consume_food_ncurses(Player *player, WINDOW *menu_win) {
+    if (player->food_count == 0) {
+        mvwprintw(menu_win, 1, 1, "No food available!");
+        wrefresh(menu_win);
+        sleep(1);
         return;
     }
 
-    // ذخیره تعداد سطرها و ستون‌ها
-    fwrite(&rows, sizeof(int), 1, file);
-    fwrite(&cols, sizeof(int), 1, file);
-
-    // ذخیره نقشه
-    for (int i = 0; i < rows; i++) {
-        fwrite(map[i], sizeof(char), cols, file);
+    // نمایش منوی غذا
+    mvwprintw(menu_win, 1, 1, "Choose a food to consume:");
+    for (int i = 0; i < player->food_count; i++) {
+        mvwprintw(menu_win, 2 + i, 1, "%d. %s (Restores %d hunger)", 
+                  i + 1, player->inventory[i].name, player->inventory[i].restore_hunger);
     }
+    mvwprintw(menu_win, 2 + player->food_count, 1, "Press the number of your choice: ");
+    wrefresh(menu_win);
 
-    // ذخیره map_visited
-    for (int i = 0; i < rows; i++) {
-        fwrite(map_visited[i], sizeof(int), cols, file);
-    }
-
-
-    // ذخیره تعداد اتاق‌ها
-    fwrite(&num_rooms, sizeof(int), 1, file);
-
-    // ذخیره اطلاعات اتاق‌ها
-    fwrite(rooms, sizeof(Room), num_rooms, file);
-
-    // ذخیره اطلاعات بازیکن
-    fwrite(player, sizeof(Player), 1, file);
-
-    //ذخیره غذا ها
-    fwrite(foods, sizeof(Food), 7, file);
-
-    fclose(file);
-}
-
-void load_game_from_binary_file(char ***map, int *rows, int *cols, Room **rooms, int *num_rooms, Player *player, int ***map_visited, Food (*foods)[7]) {
-    FILE *file = fopen("previous_game.bin", "rb");
-    if (!file) {
-        perror("Could not open file");
+    // خواندن انتخاب کاربر
+    int choice = wgetch(menu_win) - '0'; // تبدیل ورودی کاراکتری به عدد
+    if (choice < 1 || choice > player->food_count) {
+        mvwprintw(menu_win, 2 + player->food_count + 1, 1, "Invalid choice!");
+        wrefresh(menu_win);
+        sleep(1);
         return;
     }
 
-    // خواندن تعداد سطرها و ستون‌ها
-    fread(rows, sizeof(int), 1, file);
-    fread(cols, sizeof(int), 1, file);
+    // مصرف غذا
+    if(player->hunger == 100){
+        mvwprintw(menu_win, 2 + player->food_count + 2, 1, "You are full!");
+        wrefresh(menu_win);
+        sleep(1);
+    } else{
+        Food selected_food = player->inventory[choice - 1];
+        player->hunger += selected_food.restore_hunger;
+        if (player->hunger > 100) {
+            player->hunger = 100;
+        }
 
-    // تخصیص حافظه برای نقشه
-    *map = (char **)malloc(*rows * sizeof(char *));
-    for (int i = 0; i < *rows; i++) {
-        (*map)[i] = (char *)malloc(*cols * sizeof(char));
-        fread((*map)[i], sizeof(char), *cols, file);
+        // حذف غذا از موجودی
+        for (int i = choice - 1; i < player->food_count - 1; i++) {
+            player->inventory[i] = player->inventory[i + 1];
+        }
+        player->food_count--; 
+        mvwprintw(menu_win, 2 + player->food_count + 2, 1, "You consumed %s.", selected_food.name);
+        wrefresh(menu_win);               
+        sleep(1);
     }
-
-    *map_visited = (int **)malloc(*rows * sizeof(int *));
-    for (int i = 0; i < *rows; i++) {
-        (*map_visited)[i] = (int *)malloc(*cols * sizeof(int));
-    }
-    // خواندن `map_visited`
-    for (int i = 0; i < *rows; i++) {
-        fread((*map_visited)[i], sizeof(int), *cols, file);
-    }
-
-    
-
-    // خواندن تعداد اتاق‌ها
-    fread(num_rooms, sizeof(int), 1, file);
-
-    // تخصیص حافظه برای اتاق‌ها
-    *rooms = (Room *)malloc(*num_rooms * sizeof(Room));
-    fread(*rooms, sizeof(Room), *num_rooms, file);
-
-    // خواندن اطلاعات بازیکن
-    fread(player, sizeof(Player), 1, file);
-
-    //خواندن غذاهای موجود در صفحه
-    fread(foods, sizeof(Food), 7, file);
-    fclose(file);
 }
-
-
 int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7]){
     if(map[y][x] == '.' || map[y][x] == '#' || map[y][x] == '+' || map[y][x] == 'h'){
         *map_visited[y][x] == 1;
@@ -139,18 +144,18 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
         }
         if (player->food_count < 5) {
             player->inventory[player->food_count++] = food;
+            return 1;
         } else{
             WINDOW *msg_win = newwin(3, 50, 1, 1);
             show_message(msg_win, "You can't collect more than 5 foods");
             wrefresh(msg_win);
             // مکث برای مشاهده پیام
             sleep(1);
+            return 0;
         }
-        return 1;
     }
     else return 0;
 }
-
 
 void move_fast(char **map, int width, int height, Player *player, int **map_visited, Room *rooms, int num_rooms, int display_completely, Food foods[7]) {
     // نمایش اولیه برای منتظر بودن جهت حرکت
@@ -199,7 +204,6 @@ void move_fast(char **map, int width, int height, Player *player, int **map_visi
     }
 }
 
-
 void new_game() {
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
@@ -215,8 +219,9 @@ void new_game() {
     player.lives = 5;
     player.health = 100;
     player.food_count = 0;
-    player.hunger = 100;
-
+    player.hunger = 70;
+    // پنجره منوی غذا
+    WINDOW *menu_win = newwin(10, 40, 5, 5);
     
     int num_rooms;
     if(level_difficulty == 1){
@@ -255,8 +260,25 @@ void new_game() {
     int display_completely = 0;
     bool game_running = true;
     int g_clicked = 0;
+    time_t last_update = time(NULL);    
     // حلقه اصلی بازی
     while (game_running) {
+        // بررسی زمان برای کاهش گرسنگی
+        if (difftime(time(NULL), last_update) >= HUNGER_DECREASE_INTERVAL) {
+            update_hunger(&player);
+            last_update = time(NULL);
+        }
+
+        // بررسی پایان بازی
+        if (player.health <= 0) {
+            WINDOW *msg_win = newwin(3, 35, height/2, (width - 35)/2);
+            show_message(msg_win, "Game Over! You starved to death.");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(2);
+            break;
+        }
+
         // ذخیره وضعیت خانه قبلی
         char previous_cell = map[player.y][player.x];
         if(!g_clicked){
@@ -284,11 +306,13 @@ void new_game() {
         }
         attron(A_BOLD);
         mvprintw(whole_height - 4, 5, "Lives: %d", player.lives);
-        mvprintw(whole_height - 2, 5, "Health: %d%%", player.health);
-        mvprintw(whole_height - 4, width/4, "Golds: %d", player.collected_golds);
-        mvprintw(whole_height - 2, width/4, "Points: %d", player.points);
-        mvprintw(whole_height - 4, width/2 - 11, "Floor: %d", player.is_in_floor);
-        mvprintw(whole_height - 2, width/2 - 11, "hunger: %d%%", player.hunger);        
+        mvprintw(whole_height - 3, 5, "Floor: %d", player.is_in_floor);
+        mvprintw(whole_height - 2, 5, "Golds: %d", player.collected_golds);
+        mvprintw(whole_height - 1, 5, "Points: %d", player.points);
+        //mvprintw(whole_height - 4, width/6, "Health: %d%%", player.health);
+        display_health_bar_ncurses(player.health, 100, whole_height - 4 , width/6);
+        // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
+        display_hunger_bar_ncurses(player.hunger, 100, whole_height - 2 , width/6);        
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
@@ -297,6 +321,13 @@ void new_game() {
 
         // پاک کردن موقعیت قبلی بازیکن از نقشه
         map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
+        if(previous_cell == 'g' && g_clicked == 0){
+            WINDOW *msg_win = newwin(3, 25, height/2, (width - 25)/2);
+            show_message(msg_win, "You collected 1 gold!");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(1);
+        }
         g_clicked = 0;
         // مدیریت ورودی‌ها
         switch (ch) {
@@ -444,6 +475,12 @@ void new_game() {
                         }
                         break;
                 }
+                break;
+            case 'E':
+            case 'e':
+                werase(menu_win); // پاک کردن محتوای قبلی
+                box(menu_win, 0, 0);
+                consume_food_ncurses(&player, menu_win);
                 break;
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
@@ -698,148 +735,4 @@ void continue_game() {
     }
     free(map);
     free(rooms);
-}
-void show_profile(){
-
-}
-
-//......................................................................
-
-// تابع مقایسه برای مرتب‌سازی بر اساس points
-int compare_users_by_points(const void *a, const void *b) {
-    const user *userA = (const user *)a;
-    const user *userB = (const user *)b;
-
-    // ترتیب صعودی
-    //return userA->points - userB->points;
-
-    // برای ترتیب نزولی:
-    return userB->points - userA->points;
-}
-
-// تابع مرتب‌سازی کاربران
-void sort_users_by_points(user *users, int total_users) {
-    qsort(users, total_users, sizeof(user), compare_users_by_points);
-}
-
-
-// تابع خواندن اطلاعات از فایل
-int load_users_from_file(const char *filename, user **users) {
-    FILE *file = fopen(filename, "rb");
-    if (!file) {
-        perror("Error opening file");
-        return 0;
-    }
-
-    fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    int total_users = file_size / sizeof(user);
-    *users = (user *)malloc(total_users * sizeof(user));
-    if (!*users) {
-        perror("Memory allocation error");
-        fclose(file);
-        return 0;
-    }
-
-    fread(*users, sizeof(user), total_users, file);
-    fclose(file);
-
-    return total_users;
-}
-
-
-// تابع نمایش جدول امتیازات
-void display_leaderboard(user *users, int total_users, int logged_in_index) {
-    initscr();
-    start_color();
-    noecho();
-    cbreak();
-    keypad(stdscr, TRUE);
-
-    // تعریف رنگ‌ها
-    init_pair(1, COLOR_YELLOW, COLOR_BLACK); // رنگ برای سه کاربر برتر
-    init_pair(2, COLOR_WHITE, COLOR_BLACK);  // رنگ برای کاربران عادی
-    init_pair(3, COLOR_GREEN, COLOR_BLACK);  // رنگ برای کاربر لاگین‌شده
-
-    int row, col;
-    getmaxyx(stdscr, row, col);
-    int max_rows = row - 4; // تعداد سطرهای قابل نمایش
-
-    int start_index = 0;
-    int ch;
-
-    while (1) {
-        clear();
-        mvprintw(0, (col - 15) / 2, "Leaderboard");
-        mvprintw(2, 0, " Rank |       Username       | Points | Golds | Times of playing | Experience");
-        mvprintw(3, 0, "-----------------------------------------------------------------------------");
-
-        // نمایش کاربران از start_index
-        for (int i = 0; i < max_rows && (start_index + i) < total_users; i++) {
-            int idx = start_index + i;
-            int color_pair = 2;
-
-            // رنگ برای سه نفر برتر
-            if (idx == 0) color_pair = 1;
-            else if (idx == 1) color_pair = 1;
-            else if (idx == 2) color_pair = 1;
-
-            // رنگ برای کاربر لاگین‌شده
-            if (idx == logged_in_index) color_pair = 3;
-            attron(COLOR_PAIR(color_pair));
-            if(user1 != NULL && strcmp(user1->UserName , users[idx].UserName) == 0){
-                attron(A_BOLD);
-            }
-            
-            mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
-                     idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
-                     users[idx].times_played, users[idx].times_played);
-            
-            // مدال برای سه نفر برتر
-            if (idx < 3) {
-                mvprintw(4 + i, col - 6, idx == 0 ? "GOAT" : (idx == 1 ? "Legend" : "Pro"));
-            }
-            attroff(COLOR_PAIR(color_pair));            
-            if(user1 != NULL && strcmp(user1->UserName , users[idx].UserName) == 0){
-                attroff(A_BOLD);
-            }
-
-        }
-
-        mvprintw(row - 2, 0, "Use UP/DOWN arrows to scroll. Press 'q' to quit.");
-
-        refresh();
-
-        ch = getch();
-        if (ch == 'q') break;
-        else if (ch == KEY_DOWN && start_index + max_rows < total_users) start_index++;
-        else if (ch == KEY_UP && start_index > 0) start_index--;
-    }
-
-    endwin();
-}
-
-void Scoreboard(){
-    user *users = NULL;
-    int total_users = load_users_from_file("users.bin", &users);
-
-    if (total_users == 0) {
-        // ایجاد پنجره برای پیام‌ها
-        WINDOW *msg_win = newwin(3, 50, 1, 1);
-        show_message(msg_win, "No users found in file.\n");
-        wrefresh(msg_win);
-        // مکث برای مشاهده پیام
-        sleep(2);
-        return;
-    }
-
-    int logged_in_index = 0; // فرض کنیم کاربر اول لاگین کرده است
-    if (total_users > 0) {
-        sort_users_by_points(users, total_users);
-        display_leaderboard(users, total_users, logged_in_index);
-    }
-    
-    free(users); // آزاد کردن حافظه
 }

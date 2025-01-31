@@ -11,8 +11,6 @@
 int level_difficulty = 2;
 char hero_color = 'r';
 
-
-
 void print_main_menu(int row, int col, int selected){
     attron(A_BOLD);
     mvprintw(((row-11 )/ 2), (col - strlen("Menu")) / 2, "Menu");

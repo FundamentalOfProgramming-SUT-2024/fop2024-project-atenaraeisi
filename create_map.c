@@ -300,6 +300,15 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             }
             map[stair_y][stair_x] = '<';
         }
+        if(rooms[i].theme == 'n'){
+            for (int y = rooms[i].start_y; y < rooms[i].start_y + rooms[i].height; y++) {
+                for (int x = rooms[i].start_x; x < rooms[i].start_x + rooms[i].width; x++) {
+                    if (map[y][x] == '+') { // در اتاق
+                        map[y][x] = 'v';
+                    }
+                }
+            }
+        }
         
     }
 
@@ -399,8 +408,15 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             mvprintw(y, x, ".");
                         }
                     } else if(map[y][x] == 'v'){
-                        mvprintw(y, x, " ");
-                    } else if(map[y][x] == '<'){
+                        if((y+1 < height && player.y == y + 1 && player.x == x) 
+                        || (y > 1 && player.y == y - 1 && player.x == x) 
+                        || (x+1 < width && player.x == x + 1 && player.y == y) 
+                        || (x > 1 && player.x == x - 1 && player.y == y)){
+                            mvprintw(y, x, "+");
+                        }
+                        else mvprintw(y, x, " ");
+                    } 
+                    else if(map[y][x] == '<'){
                         attron(COLOR_PAIR(205));
                         mvprintw(y, x, "<");
                         attroff(COLOR_PAIR(205));
@@ -527,6 +543,9 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                     case '+': // درب‌ها
                         mvprintw(y, x, "+");
                         break;
+                    case '=':
+                        mvprintw(y, x, "=");
+                        break;
                     case 'o': // موانع
                         attron(COLOR_PAIR(1));
                         mvprintw(y, x, "o");
@@ -576,7 +595,13 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         }
                         break;
                     case 'v':
-                        mvprintw(y, x, " ");
+                        if((y+1 < height && player.y == y + 1 && player.x == x) 
+                        || (y > 1 && player.y == y - 1 && player.x == x) 
+                        || (x+1 < height && player.x == x + 1 && player.y == y) 
+                        || (x > 1 && player.x == x - 1 && player.y == y)){
+                            mvprintw(y, x, "+");
+                        }
+                        else mvprintw(y, x, " ");
                         break;
                 }
             }

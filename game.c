@@ -46,6 +46,8 @@ int can_go(int y, int x, char **map, Player* player){
     } else if(map[y][x] == '<'){
         player->is_in_floor++;
         return 1;
+    } else if(map[y][x] == 'v'){
+        return 1;
     }
     else return 0;
 }

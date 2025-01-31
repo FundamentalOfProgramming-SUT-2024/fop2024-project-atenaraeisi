@@ -163,7 +163,7 @@ void move_fast(char **map, int width, int height, Player *player, int **map_visi
         int new_x = player->x + dx;
 
         // بررسی محدودیت‌های نقشه و مانع‌ها
-        if (new_y < 0 || new_y >= height || new_x < 0 || new_x >= width || !can_go(new_y, new_x, map, player, &map_visited, g_clicked)) {
+        if (new_y < 0 || new_y >= height || new_x < 0 || new_x >= width || !can_go(new_y, new_x, map, player, &map_visited, 0)) {
             break;
         }
 
@@ -349,6 +349,7 @@ void new_game() {
             case 'f': // حرکت سریع پس از دریافت جهت
                 move_fast(map, width, height, &player, map_visited, rooms, num_rooms, display_completely);
                 break;
+            case 'G':
             case 'g':
                 g_clicked = 1;
                 int ch2 = getch();
@@ -451,7 +452,7 @@ void continue_game() {
     Player player;
 
     // بارگذاری اطلاعات بازی
-    load_game_from_binary_file(&map, &height, &width, &rooms, &num_rooms, &player, &map_visited, g_clicked);
+    load_game_from_binary_file(&map, &height, &width, &rooms, &num_rooms, &player, &map_visited);
 
     // تنظیم رنگ بازیکن
     player.color = hero_color;
@@ -459,13 +460,20 @@ void continue_game() {
     int display_completely = 0;
     // متغیر برای وضعیت بازی
     bool game_running = true;
+    int g_clicked = 0;
 
     // حلقه اصلی بازی
     while (game_running) {
         // ذخیره وضعیت خانه قبلی
         char previous_cell = map[player.y][player.x];
-        map_visited[player.y][player.x] = 1;
+        if(!g_clicked){
+            map_visited[player.y][player.x] = 1;   
+        }
 
+        if(previous_cell == '<'){
+            map = create_map(width, height, level_difficulty, &player, rooms, num_rooms);
+            previous_cell = '.';
+        }
         // رسم بازیکن روی نقشه
         map[player.y][player.x] = '@';
 
@@ -497,7 +505,7 @@ void continue_game() {
 
         // پاک کردن موقعیت قبلی بازیکن از نقشه
         map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
-
+        g_clicked = 0;
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
@@ -569,6 +577,80 @@ void continue_game() {
                     display_completely = 0;
                 } else{
                     display_completely = 1;
+                }
+                break;
+            case 'F':
+            case 'f': // حرکت سریع پس از دریافت جهت
+                move_fast(map, width, height, &player, map_visited, rooms, num_rooms, display_completely);
+                break;
+            case 'G':
+            case 'g':
+                g_clicked = 1;
+                int ch2 = getch();
+                switch (ch2) {
+                    case KEY_UP:
+                        if (player.y > 0 && can_go(player.y-1 , player.x, map, &player, &map_visited, g_clicked)){
+                            player.y--;
+                            player.direction[0] = 'y';
+                            player.direction[1] = '-';
+                        }
+                            
+                        break;
+                    case KEY_DOWN:
+                        if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player, &map_visited, g_clicked)){
+                            player.y++;
+                            player.direction[0] = 'y';
+                            player.direction[1] = '+';
+                        }
+                            
+                        break;
+                    case KEY_LEFT:
+                        if (player.x > 0 && can_go(player.y , player.x - 1, map, &player, &map_visited, g_clicked)){
+                            player.x--;
+                            player.direction[0] = 'x';
+                            player.direction[1] = '-';
+                        }
+                        
+                        break;
+                    case KEY_RIGHT:
+                        if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player, &map_visited, g_clicked)){
+                            player.x++;
+                            player.direction[0] = 'x';
+                            player.direction[1] = '+';
+                        }
+                        break;
+                    case KEY_PPAGE:
+                        if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player, &map_visited, g_clicked)){
+                            player.x++;
+                            player.y--;
+                            player.direction[0] = 'y';
+                            player.direction[1] = '-';
+                        }
+                        break;
+                    case KEY_NPAGE:
+                        if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player, &map_visited, g_clicked)){
+                            player.x++;
+                            player.y++;
+                            player.direction[0] = 'y';
+                            player.direction[1] = '+';
+                        }
+                        break;
+                    case KEY_HOME:
+                        if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map, &player, &map_visited, g_clicked)){
+                            player.x--;
+                            player.y--;
+                            player.direction[0] = 'y';
+                            player.direction[1] = '-';
+                        }
+                        break;
+                    case KEY_END:
+                        if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map, &player, &map_visited, g_clicked)){
+                            player.x--;
+                            player.y++;
+                            player.direction[0] = 'y';
+                            player.direction[1] = '+';
+                        }
+                        break;
                 }
                 break;
             case 'q': // خروج از بازی

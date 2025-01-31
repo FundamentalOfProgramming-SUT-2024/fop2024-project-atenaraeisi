@@ -34,8 +34,17 @@ void show_message(WINDOW *msg_win, const char *message) {
 //WINDOW *msg_win = newwin(height, width, start_y, start_x);
 //wrefresh(msg_win);
 
-int can_go(int y, int x, char **map){
-    if(map[y][x] == '.' || map[y][x] == '#' || map[y][x] == '+' || map[y][x] == 'g' || map[y][x] == 'y' || map[y][x] == 'h'){
+int can_go(int y, int x, char **map, Player* player){
+    if(map[y][x] == '.' || map[y][x] == '#' || map[y][x] == '+' || map[y][x] == 'h'){
+        return 1;
+    } else if(map[y][x] == 'y'){
+        player->lives--;
+        return 1;
+    } else if(map[y][x] == 'g'){
+        player->collected_golds++;
+        return 1;
+    } else if(map[y][x] == '<'){
+        player->is_in_floor++;
         return 1;
     }
     else return 0;
@@ -126,6 +135,7 @@ void continue_game() {
     setlocale(LC_ALL, "");
     int width, height, num_rooms;    
     getmaxyx(stdscr, height, width);
+    int whole_height = height;
     height -= 5;
 
     char **map;
@@ -158,7 +168,22 @@ void continue_game() {
             display_whole_map(map, width, height, player, rooms, num_rooms, map_visited);
         } else{
             display_map(map, width, height, player, rooms, num_rooms, map_visited);
-        }        refresh();
+        }
+        for (int i = 0; i < width; i++) {
+            mvaddch(whole_height - 5, i, '-'); // در ردیف 0، کاراکتر "-" را رسم می‌کنیم
+        }
+        for (int i = 0; i < 5; i++) {
+            mvaddch(whole_height - i, width/2, '|'); // در ردیف 0، کاراکتر "-" را رسم می‌کنیم
+        }
+        attron(A_BOLD);
+        mvprintw(whole_height - 4, 5, "Lives: %d", player.lives);
+        mvprintw(whole_height - 2, 5, "Health: %d%%", player.health);
+        mvprintw(whole_height - 4, width/4, "Golds: %d", player.collected_golds);
+        mvprintw(whole_height - 2, width/4, "Points: %d", player.points);
+        mvprintw(whole_height - 4, width/2 - 11, "Floor: %d", player.is_in_floor);
+        attroff(A_BOLD);
+        mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
+        refresh();
 
         // دریافت ورودی از کاربر
         int ch = getch();
@@ -169,7 +194,7 @@ void continue_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && can_go(player.y-1 , player.x, map)){
+                if (player.y > 0 && can_go(player.y-1 , player.x, map, &player)){
                     player.y--;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
@@ -177,7 +202,7 @@ void continue_game() {
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map)){
+                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player)){
                     player.y++;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
@@ -185,7 +210,7 @@ void continue_game() {
                     
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && can_go(player.y , player.x - 1, map)){
+                if (player.x > 0 && can_go(player.y , player.x - 1, map, &player)){
                     player.x--;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
@@ -193,14 +218,14 @@ void continue_game() {
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && can_go(player.y , player.x + 1, map)){
+                if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player)){
                     player.x++;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map)){
+                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player)){
                     player.x++;
                     player.y--;
                     player.direction[0] = 'y';
@@ -208,7 +233,7 @@ void continue_game() {
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map)){
+                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player)){
                     player.x++;
                     player.y++;
                     player.direction[0] = 'y';
@@ -263,10 +288,15 @@ void new_game() {
     setlocale(LC_ALL, "");
     int width, height;
     getmaxyx(stdscr, height, width);
+    int whole_height = height;
     height -= 5;
     Player player;
     player.color = hero_color;
-    player.is_in_floor = 0;
+    player.is_in_floor = 1;
+    player.collected_golds = 0;
+    player.points = 0;
+    player.lives = 5;
+    player.health = 100;
 
     
     int num_rooms;
@@ -309,11 +339,17 @@ void new_game() {
     while (game_running) {
         // ذخیره وضعیت خانه قبلی
         char previous_cell = map[player.y][player.x];
+
         map_visited[player.y][player.x] = 1;
 
+        
+
+        if(previous_cell == '<'){
+            map = create_map(width, height, level_difficulty, &player, rooms, num_rooms);
+            previous_cell = '.';
+        }
         // رسم بازیکن روی نقشه
         map[player.y][player.x] = '@';
-
         // نمایش نقشه
         clear();
         if(display_completely){
@@ -321,8 +357,21 @@ void new_game() {
         } else{
             display_map(map, width, height, player, rooms, num_rooms, map_visited);
         }
+        for (int i = 0; i < width; i++) {
+            mvaddch(whole_height - 5, i, '-'); // در ردیف 0، کاراکتر "-" را رسم می‌کنیم
+        }
+        for (int i = 0; i < 5; i++) {
+            mvaddch(whole_height - i, width/2, '|'); // در ردیف 0، کاراکتر "-" را رسم می‌کنیم
+        }
+        attron(A_BOLD);
+        mvprintw(whole_height - 4, 5, "Lives: %d", player.lives);
+        mvprintw(whole_height - 2, 5, "Health: %d%%", player.health);
+        mvprintw(whole_height - 4, width/4, "Golds: %d", player.collected_golds);
+        mvprintw(whole_height - 2, width/4, "Points: %d", player.points);
+        mvprintw(whole_height - 4, width/2 - 11, "Floor: %d", player.is_in_floor);
+        attroff(A_BOLD);
+        mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
-
         // دریافت ورودی از کاربر
         int ch = getch();
 
@@ -332,7 +381,7 @@ void new_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && can_go(player.y-1 , player.x, map)){
+                if (player.y > 0 && can_go(player.y-1 , player.x, map, &player)){
                     player.y--;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
@@ -340,7 +389,7 @@ void new_game() {
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map)){
+                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player)){
                     player.y++;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
@@ -348,7 +397,7 @@ void new_game() {
                     
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && can_go(player.y , player.x - 1, map)){
+                if (player.x > 0 && can_go(player.y , player.x - 1, map, &player)){
                     player.x--;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
@@ -356,14 +405,14 @@ void new_game() {
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && can_go(player.y , player.x + 1, map)){
+                if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player)){
                     player.x++;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map)){
+                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player)){
                     player.x++;
                     player.y--;
                     player.direction[0] = 'y';
@@ -371,7 +420,7 @@ void new_game() {
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map)){
+                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player)){
                     player.x++;
                     player.y++;
                     player.direction[0] = 'y';
@@ -379,7 +428,7 @@ void new_game() {
                 }
                 break;
             case KEY_HOME:
-                if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map)){
+                if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map, &player)){
                     player.x--;
                     player.y--;
                     player.direction[0] = 'y';
@@ -387,7 +436,7 @@ void new_game() {
                 }
                 break;
             case KEY_END:
-                if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map)){
+                if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map, &player)){
                     player.x--;
                     player.y++;
                     player.direction[0] = 'y';

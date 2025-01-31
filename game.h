@@ -9,6 +9,10 @@ typedef struct{
     char color;
     char direction[2];
     int is_in_floor;
+    int collected_golds;
+    int points;
+    int lives;
+    int health;
 }Player;
 
 typedef struct {

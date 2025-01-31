@@ -34,6 +34,13 @@ void show_message(WINDOW *msg_win, const char *message) {
 //WINDOW *msg_win = newwin(height, width, start_y, start_x);
 //wrefresh(msg_win);
 
+int can_go(int y, int x, char **map){
+    if(map[y][x] == '.' || map[y][x] == '#' || map[y][x] == '+' || map[y][x] == 'g' || map[y][x] == 'y' || map[y][x] == 'h'){
+        return 1;
+    }
+    else return 0;
+}
+
 void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int num_rooms, Player *player,  int **map_visited) {
     FILE *file = fopen("previous_game.bin", "wb");
     if (!file) {
@@ -148,7 +155,7 @@ void continue_game() {
         // نمایش نقشه
         clear();
         if(display_completely){
-            display_whole_map(map, width, height, player, rooms, num_rooms);
+            display_whole_map(map, width, height, player, rooms, num_rooms, map_visited);
         } else{
             display_map(map, width, height, player, rooms, num_rooms, map_visited);
         }        refresh();
@@ -162,7 +169,7 @@ void continue_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && (map[player.y - 1][player.x] == '.' || map[player.y - 1][player.x] == '#' || map[player.y - 1][player.x] == '+')){
+                if (player.y > 0 && can_go(player.y-1 , player.x, map)){
                     player.y--;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
@@ -170,7 +177,7 @@ void continue_game() {
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && (map[player.y + 1][player.x] == '.' || map[player.y + 1][player.x] == '#' || map[player.y + 1][player.x] == '+')){
+                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map)){
                     player.y++;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
@@ -178,7 +185,7 @@ void continue_game() {
                     
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && (map[player.y][player.x - 1] == '.' || map[player.y][player.x - 1] == '#' || map[player.y][player.x - 1] == '+')){
+                if (player.x > 0 && can_go(player.y , player.x - 1, map)){
                     player.x--;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
@@ -186,14 +193,14 @@ void continue_game() {
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && (map[player.y][player.x + 1] == '.' || map[player.y][player.x + 1] == '#' || map[player.y][player.x + 1] == '+')){
+                if (player.x < width - 1 && can_go(player.y , player.x + 1, map)){
                     player.x++;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y > 0 && player.x < width - 1 && (map[player.y-1][player.x + 1] == '.' || map[player.y-1][player.x + 1] == '#' || map[player.y-1][player.x + 1] == '+')){
+                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map)){
                     player.x++;
                     player.y--;
                     player.direction[0] = 'y';
@@ -201,7 +208,7 @@ void continue_game() {
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - 1 && player.x < width - 1 && (map[player.y + 1][player.x + 1] == '.' || map[player.y + 1][player.x + 1] == '#' || map[player.y + 1][player.x + 1] == '+')){
+                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map)){
                     player.x++;
                     player.y++;
                     player.direction[0] = 'y';
@@ -259,6 +266,7 @@ void new_game() {
     height -= 5;
     Player player;
     player.color = hero_color;
+    player.is_in_floor = 0;
 
     
     int num_rooms;
@@ -272,7 +280,7 @@ void new_game() {
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     
     // ساخت نقشه بازی
-    char **map = create_map(width, height, level_difficulty, rooms, num_rooms);
+    char **map = create_map(width, height, level_difficulty, &player, rooms, num_rooms);
 
     //مکان هایی از نقشه که دیده شدند
     int **map_visited = (int **)malloc(height * sizeof(int *));
@@ -309,7 +317,7 @@ void new_game() {
         // نمایش نقشه
         clear();
         if(display_completely){
-            display_whole_map(map, width, height, player, rooms, num_rooms);
+            display_whole_map(map, width, height, player, rooms, num_rooms, map_visited);
         } else{
             display_map(map, width, height, player, rooms, num_rooms, map_visited);
         }
@@ -324,7 +332,7 @@ void new_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && (map[player.y - 1][player.x] == '.' || map[player.y - 1][player.x] == '#' || map[player.y - 1][player.x] == '+')){
+                if (player.y > 0 && can_go(player.y-1 , player.x, map)){
                     player.y--;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
@@ -332,7 +340,7 @@ void new_game() {
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && (map[player.y + 1][player.x] == '.' || map[player.y + 1][player.x] == '#' || map[player.y + 1][player.x] == '+')){
+                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map)){
                     player.y++;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
@@ -340,7 +348,7 @@ void new_game() {
                     
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && (map[player.y][player.x - 1] == '.' || map[player.y][player.x - 1] == '#' || map[player.y][player.x - 1] == '+')){
+                if (player.x > 0 && can_go(player.y , player.x - 1, map)){
                     player.x--;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
@@ -348,14 +356,14 @@ void new_game() {
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && (map[player.y][player.x + 1] == '.' || map[player.y][player.x + 1] == '#' || map[player.y][player.x + 1] == '+')){
+                if (player.x < width - 1 && can_go(player.y , player.x + 1, map)){
                     player.x++;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y > 0 && player.x < width - 1 && (map[player.y-1][player.x + 1] == '.' || map[player.y-1][player.x + 1] == '#' || map[player.y-1][player.x + 1] == '+')){
+                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map)){
                     player.x++;
                     player.y--;
                     player.direction[0] = 'y';
@@ -363,7 +371,7 @@ void new_game() {
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - 1 && player.x < width - 1 && (map[player.y + 1][player.x + 1] == '.' || map[player.y + 1][player.x + 1] == '#' || map[player.y + 1][player.x + 1] == '+')){
+                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map)){
                     player.x++;
                     player.y++;
                     player.direction[0] = 'y';
@@ -371,7 +379,7 @@ void new_game() {
                 }
                 break;
             case KEY_HOME:
-                if (player.y > 0 && player.x > 0 && (map[player.y - 1][player.x - 1] == '.' || map[player.y - 1][player.x - 1] == '#' || map[player.y - 1][player.x - 1] == '+')){
+                if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map)){
                     player.x--;
                     player.y--;
                     player.direction[0] = 'y';
@@ -379,7 +387,7 @@ void new_game() {
                 }
                 break;
             case KEY_END:
-                if (player.y < height - 1 && player.x > 0 && (map[player.y + 1][player.x - 1] == '.' || map[player.y + 1][player.x - 1] == '#' || map[player.y + 1][player.x - 1] == '+')){
+                if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map)){
                     player.x--;
                     player.y++;
                     player.direction[0] = 'y';

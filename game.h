@@ -8,6 +8,7 @@ typedef struct{
     int y;
     char color;
     char direction[2];
+    int is_in_floor;
 }Player;
 
 typedef struct {

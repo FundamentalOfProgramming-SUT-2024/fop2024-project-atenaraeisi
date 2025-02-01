@@ -29,6 +29,20 @@ typedef struct {
     int weight;
 } Weapon;
 
+typedef enum {
+    HEALTH,
+    SPEED,
+    DAMAGE
+} TalismanType;
+
+//طلسم
+typedef struct {
+    TalismanType type;
+    char name[20];
+    char symbol[5];  // برای نگه‌داری کاراکترهای Unicode
+    int damage;
+    int weight;
+} talisman;
 
 typedef struct{
     int x;
@@ -46,6 +60,8 @@ typedef struct{
     Weapon Weapon_list[10];
     int Weapon_count;
     Weapon equipped_weapon;
+    talisman talisman_list[10];
+    int talisman_count;
 }Player;
 
 typedef struct {

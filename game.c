@@ -34,6 +34,66 @@ void show_message(WINDOW *msg_win, const char *message) {
     wrefresh(msg_win);
 */
 
+talisman createTalisman(TalismanType type) {
+    talisman talisman;
+    talisman.type = type;
+    switch (type) {
+        case HEALTH:
+            strcpy(talisman.name, "Health talisman");
+            strcpy(talisman.symbol, "\u2695");
+            talisman.damage = 15;
+            talisman.weight = 10;
+            break;
+        case SPEED:
+            strcpy(talisman.name, "speed talisman");
+            strcpy(talisman.symbol, "\u26f7");
+            talisman.damage = 8;
+            talisman.weight = 3;
+            break;
+        case DAMAGE:
+            strcpy(talisman.name, "damage talisman");
+            strcpy(talisman.symbol, "\u2620");
+            talisman.damage = 12;
+            talisman.weight = 5;
+            break;
+    }
+
+    return talisman;
+}
+void talisman_menu(Player *player, WINDOW *menu_win) {
+    if (player->talisman_count == 0) {
+        mvwprintw(menu_win, 1, 1, "No talismans available!");
+        wrefresh(menu_win);
+        sleep(1);
+        return;
+    }
+
+    // نمایش منوی سلاح‌ها
+    mvwprintw(menu_win, 1, 1, "Choose a talisman to equip:");
+    for (int i = 0; i < player->talisman_count; i++) {
+        mvwprintw(menu_win, 2 + i, 1, "%d. %s (Damage: %d, Weight: %d)", 
+                  i + 1, player->talisman_list[i].name, player->talisman_list[i].damage, player->talisman_list[i].weight);
+    }
+    mvwprintw(menu_win, 2 + player->talisman_count, 1, "Press the number of your choice: ");
+    wrefresh(menu_win);
+
+    // خواندن انتخاب کاربر
+    int choice = wgetch(menu_win) - '0';
+    if (choice < 1 || choice > player->talisman_count) {
+        mvwprintw(menu_win, 2 + player->talisman_count + 1, 1, "Invalid choice!");
+        wrefresh(menu_win);
+        sleep(1);
+        return;
+    }
+
+    // تجهیز سلاح
+    /*talisman selected_talisman = player->talisman_list[choice - 1];
+    player->equipped_talisman = selected_talisman;
+
+    mvwprintw(menu_win, 2 + player->talisman_count + 2, 1, "You equipped %s.", selected_talisman.name);
+    wrefresh(menu_win);
+    sleep(1);*/
+}
 // تابعی برای ایجاد یک سلاح جدید
 Weapon createWeapon(WeaponType type) {
     Weapon weapon;
@@ -127,7 +187,7 @@ void display_hunger_bar_ncurses(int hunger, int max_hunger, int y, int x) {
     int bar_length = 20; // طول نوار گرسنگی
     int filled = (hunger * bar_length) / max_hunger;
 
-    mvprintw(y, x, "Hunger: [");
+    mvprintw(y, x, "Satiety: [");
     for (int i = 0; i < filled; i++) {
         printw("#"); // قسمت پر شده
     }
@@ -230,7 +290,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
             player->inventory[player->food_count++] = food;
             return 1;
         } else{
-            WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+            WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
             show_message(msg_win, "You can't collect more than 5 foods");
             wrefresh(msg_win);
             // مکث برای مشاهده پیام
@@ -251,7 +311,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 player->Weapon_list[player->Weapon_count++] = mace;
                 return 1;
             } else{
-                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
                 show_message(msg_win, "You can't collect more than 10 weapons");
                 wrefresh(msg_win);
                 // مکث برای مشاهده پیام
@@ -272,7 +332,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 player->Weapon_list[player->Weapon_count++] = dagger;
                 return 1;
             } else{
-                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
                 show_message(msg_win, "You can't collect more than 10 weapons");
                 wrefresh(msg_win);
                 // مکث برای مشاهده پیام
@@ -293,7 +353,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 player->Weapon_list[player->Weapon_count++] = wand;
                 return 1;
             } else{
-                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
                 show_message(msg_win, "You can't collect more than 10 weapons");
                 wrefresh(msg_win);
                 // مکث برای مشاهده پیام
@@ -314,7 +374,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 player->Weapon_list[player->Weapon_count++] = arrow;
                 return 1;
             } else{
-                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
                 show_message(msg_win, "You can't collect more than 10 weapons");
                 wrefresh(msg_win);
                 // مکث برای مشاهده پیام
@@ -335,7 +395,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 player->Weapon_list[player->Weapon_count++] = sword;
                 return 1;
             } else{
-                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
                 show_message(msg_win, "You can't collect more than 10 weapons");
                 wrefresh(msg_win);
                 // مکث برای مشاهده پیام
@@ -343,7 +403,64 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 return 0;
             }
         } else return 0;
-    }
+    } else if(map[y][x] == 'H'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this talisman?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y' || choice == 'Y'){
+            talisman health = createTalisman(HEALTH);
+            if (player->talisman_count < 10){
+                player->talisman_list[player->talisman_count++] = health;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 talismans");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else return 0;
+    } else if(map[y][x] == 's'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this talisman?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y' || choice == 'Y'){
+            talisman speed = createTalisman(SPEED);
+            if (player->talisman_count < 10){
+                player->talisman_list[player->talisman_count++] = speed;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 talismans");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else return 0;
+    } else if(map[y][x] == 'd'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this talisman?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y' || choice == 'Y'){
+            talisman damage = createTalisman(DAMAGE);
+            if (player->talisman_count < 10){
+                player->talisman_list[player->talisman_count++] = damage;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 talismans");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else return 0;
+    } 
     else return 0;
 }
 
@@ -407,12 +524,13 @@ void new_game() {
     player.collected_golds = 0;
     player.points = 0;
     player.lives = 5;
-    player.health = 100;
+    player.health = 70;
     player.food_count = 0;
     player.hunger = 70;
     player.Weapon_count = 1;
     player.equipped_weapon = createWeapon(MACE);
     player.Weapon_list[0] = createWeapon(MACE);
+    player.talisman_count = 0;
     // پنجره منوی غذا
     WINDOW *menu_win = newwin(20, 45, 0, 0);
     
@@ -460,6 +578,28 @@ void new_game() {
         if (difftime(time(NULL), last_update) >= HUNGER_DECREASE_INTERVAL) {
             update_hunger(&player);
             last_update = time(NULL);
+        }
+
+        // int in_treasure_room = 0; // پیدا کردن اتاقی که بازیکن در آن قرار دارد
+        // for (int r = 0; r < num_rooms; r++){
+        //     if (player.x >= rooms[r].start_x && player.x < rooms[r].start_x + rooms[r].width &&
+        //         player.y >= rooms[r].start_y && player.y < rooms[r].start_y + rooms[r].height) {
+        //         if (rooms[r].theme == 't') {
+        //             in_treasure_room = 1;
+        //         }
+        //         break;
+        //     }
+        // }
+        if(player.is_in_floor > 4){
+            WINDOW *msg_win = newwin(10, 50, height/2, (width - 50)/2);
+            wclear(msg_win); // پاک کردن محتوای قبلی پنجره
+            box(msg_win, 0, 0); // افزودن کادر دور پنجره
+            mvwprintw(msg_win, 1, 21, "You win!"); // نوشتن پیام جدید
+            mvwprintw(msg_win, 3, 12, "You collected %d golds.",player.collected_golds); // نوشتن پیام جدید
+            mvwprintw(msg_win, 5, 12, "Your point is %d.", player.points); // نوشتن پیام جدید
+            wrefresh(msg_win); // به‌روزرسانی پنجره
+            sleep(5);
+            break;
         }
 
         // بررسی پایان بازی
@@ -531,6 +671,8 @@ void new_game() {
             sleep(1);
             map[player.y][player.x] = '.';
         } else if((previous_cell == 'M' || previous_cell == 'S' || previous_cell == 'D' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
+            map[player.y][player.x] = '.';
+        } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's') && g_clicked == 0){
             map[player.y][player.x] = '.';
         }
         g_clicked = 0;
@@ -693,6 +835,12 @@ void new_game() {
                 box(menu_win, 0, 0);
                 equip_weapon_ncurses(&player, menu_win);
                 break;
+            case 't':
+            case 'T':
+                werase(menu_win); // پاک کردن محتوای قبلی
+                box(menu_win, 0, 0);
+                talisman_menu(&player, menu_win);
+                break;
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;
@@ -736,9 +884,25 @@ void continue_game() {
     // متغیر برای وضعیت بازی
     bool game_running = true;
     int g_clicked = 0;
-
+    WINDOW *menu_win = newwin(20, 45, 0, 0);
+    time_t last_update = time(NULL);  
     // حلقه اصلی بازی
     while (game_running) {
+        // بررسی زمان برای کاهش گرسنگی
+        if (difftime(time(NULL), last_update) >= HUNGER_DECREASE_INTERVAL) {
+            update_hunger(&player);
+            last_update = time(NULL);
+        }
+
+        // بررسی پایان بازی
+        if (player.health <= 0) {
+            WINDOW *msg_win = newwin(3, 35, height/2, (width - 35)/2);
+            show_message(msg_win, "Game Over! You starved to death.");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(2);
+            break;
+        }
         // ذخیره وضعیت خانه قبلی
         char previous_cell = map[player.y][player.x];
         if(!g_clicked){
@@ -784,6 +948,25 @@ void continue_game() {
 
         // پاک کردن موقعیت قبلی بازیکن از نقشه
         map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
+        if(previous_cell == 'g' && g_clicked == 0){
+            WINDOW *msg_win = newwin(3, 25, whole_height - 3, width/2 + 2);
+            show_message(msg_win, "You collected 1 gold!");
+            wrefresh(msg_win);
+            map[player.y][player.x] = '.';
+            // مکث برای مشاهده پیام
+            sleep(1);
+        } else if(previous_cell == 'b' && g_clicked == 0){
+            WINDOW *msg_win = newwin(3, 30, whole_height - 3, width/2 + 2);
+            show_message(msg_win, "You collected 1 black gold!");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(1);
+            map[player.y][player.x] = '.';
+        } else if((previous_cell == 'M' || previous_cell == 'S' || previous_cell == 'D' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
+            map[player.y][player.x] = '.';
+        } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's') && g_clicked == 0){
+            map[player.y][player.x] = '.';
+        }        
         g_clicked = 0;
         // مدیریت ورودی‌ها
         switch (ch) {
@@ -932,6 +1115,25 @@ void continue_game() {
                         break;
                 }
                 break;
+            case 'E':
+            case 'e':
+                werase(menu_win); // پاک کردن محتوای قبلی
+                box(menu_win, 0, 0);
+                consume_food_ncurses(&player, menu_win);
+                break;
+            case 'i':
+            case 'I':
+                werase(menu_win); // پاک کردن محتوای قبلی
+                box(menu_win, 0, 0);
+                equip_weapon_ncurses(&player, menu_win);
+                break;
+            case 't':
+            case 'T':
+                werase(menu_win); // پاک کردن محتوای قبلی
+                box(menu_win, 0, 0);
+                talisman_menu(&player, menu_win);
+                break;
+            
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;

@@ -22,7 +22,7 @@ void show_message(WINDOW *msg_win, const char *message) {
 }
 /*
     // ایجاد پنجره برای پیام‌ها
-    WINDOW *msg_win = newwin(3, 50, 1, 1);
+    WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
     show_message(msg_win, "Game saved successfully!");
     wrefresh(msg_win);
     // مکث برای مشاهده پیام
@@ -34,7 +34,88 @@ void show_message(WINDOW *msg_win, const char *message) {
     wrefresh(msg_win);
 */
 
+// تابعی برای ایجاد یک سلاح جدید
+Weapon createWeapon(WeaponType type) {
+    Weapon weapon;
+    weapon.type = type;
+    switch (type) {
+        case MACE:
+            strcpy(weapon.name, "Mace");
+            strcpy(weapon.symbol, "\u2692");
+            weapon.damage = 15;
+            weapon.weight = 10;
+            break;
+        case DAGGER:
+            strcpy(weapon.name, "Dagger");
+            strcpy(weapon.symbol, "\u2020");
+            weapon.damage = 8;
+            weapon.weight = 3;
+            break;
+        case MAGIC_WAND:
+            strcpy(weapon.name, "Magic Wand");
+            strcpy(weapon.symbol, "\u269A");
+            weapon.damage = 12;
+            weapon.weight = 5;
+            break;
+        case NORMAL_ARROW:
+            strcpy(weapon.name, "Normal Arrow");
+            strcpy(weapon.symbol, "\u27B3");
+            weapon.damage = 10;
+            weapon.weight = 2;
+            break;
+        case SWORD:
+            strcpy(weapon.name, "Sword");
+            strcpy(weapon.symbol, "\u2694");
+            weapon.damage = 20;
+            weapon.weight = 12;
+            break;
+    }
 
+    return weapon;
+}
+void display_weapons(Player player, int height, int width) {
+    mvprintw(height - 2, width/6, "Weapon: ");
+    int x = 9;  // موقعیت شروع نمایش سلاح‌ها
+
+    for (int i = 0; i < player.Weapon_count; i++) {
+        mvprintw(height - 2, width/6 + x, "%s", player.Weapon_list[i].symbol); 
+        x += 3; // فاصله بین سلاح‌ها
+    }
+}
+void equip_weapon_ncurses(Player *player, WINDOW *menu_win) {
+    if (player->Weapon_count == 0) {
+        mvwprintw(menu_win, 1, 1, "No weapons available!");
+        wrefresh(menu_win);
+        sleep(1);
+        return;
+    }
+
+    // نمایش منوی سلاح‌ها
+    mvwprintw(menu_win, 1, 1, "Choose a weapon to equip:");
+    for (int i = 0; i < player->Weapon_count; i++) {
+        mvwprintw(menu_win, 2 + i, 1, "%d. %s (Damage: %d, Weight: %d)", 
+                  i + 1, player->Weapon_list[i].name, player->Weapon_list[i].damage, player->Weapon_list[i].weight);
+    }
+    mvwprintw(menu_win, 2 + player->Weapon_count, 1, "Press the number of your choice: ");
+    wrefresh(menu_win);
+
+    // خواندن انتخاب کاربر
+    int choice = wgetch(menu_win) - '0';
+    if (choice < 1 || choice > player->Weapon_count) {
+        mvwprintw(menu_win, 2 + player->Weapon_count + 1, 1, "Invalid choice!");
+        wrefresh(menu_win);
+        sleep(1);
+        return;
+    }
+
+    // تجهیز سلاح
+    Weapon selected_weapon = player->Weapon_list[choice - 1];
+    player->equipped_weapon = selected_weapon;
+
+    mvwprintw(menu_win, 2 + player->Weapon_count + 2, 1, "You equipped %s.", selected_weapon.name);
+    wrefresh(menu_win);
+    sleep(1);
+}
 void update_hunger(Player *player) {
     if (player->hunger > 0) {
         player->hunger -= 1; // کاهش گرسنگی
@@ -120,7 +201,10 @@ void consume_food_ncurses(Player *player, WINDOW *menu_win) {
         sleep(1);
     }
 }
+
 int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7]){
+    int height, width;
+    getmaxyx(stdscr, height, width);
     if(map[y][x] == '.' || map[y][x] == '#' || map[y][x] == '+' || map[y][x] == 'h'){
         *map_visited[y][x] == 1;
         return 1;
@@ -146,13 +230,119 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
             player->inventory[player->food_count++] = food;
             return 1;
         } else{
-            WINDOW *msg_win = newwin(3, 50, 1, 1);
+            WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
             show_message(msg_win, "You can't collect more than 5 foods");
             wrefresh(msg_win);
             // مکث برای مشاهده پیام
             sleep(1);
             return 0;
         }
+    } else if(map[y][x] == 'b'){
+        player->collected_golds += 5;
+        return 1;
+    } else if(map[y][x] == 'M'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            Weapon mace = createWeapon(MACE);
+            if (player->Weapon_count < 10) {
+                player->Weapon_list[player->Weapon_count++] = mace;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 weapons");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }            
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'D'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            Weapon dagger = createWeapon(DAGGER);
+            if (player->Weapon_count < 10) {
+                player->Weapon_list[player->Weapon_count++] = dagger;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 weapons");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'W'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            Weapon wand = createWeapon(MAGIC_WAND);
+            if (player->Weapon_count < 10) {
+                player->Weapon_list[player->Weapon_count++] = wand;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 weapons");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'N'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            Weapon arrow = createWeapon(NORMAL_ARROW);
+            if (player->Weapon_count < 10) {
+                player->Weapon_list[player->Weapon_count++] = arrow;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 weapons");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'S'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            Weapon sword = createWeapon(SWORD);
+            if (player->Weapon_count < 10) {
+                player->Weapon_list[player->Weapon_count++] = sword;
+                return 1;
+            } else{
+                WINDOW *msg_win = newwin(3, 50, height - 2, width/2 + 2);
+                show_message(msg_win, "You can't collect more than 10 weapons");
+                wrefresh(msg_win);
+                // مکث برای مشاهده پیام
+                sleep(1);
+                return 0;
+            }
+        } else return 0;
     }
     else return 0;
 }
@@ -220,8 +410,11 @@ void new_game() {
     player.health = 100;
     player.food_count = 0;
     player.hunger = 70;
+    player.Weapon_count = 1;
+    player.equipped_weapon = createWeapon(MACE);
+    player.Weapon_list[0] = createWeapon(MACE);
     // پنجره منوی غذا
-    WINDOW *menu_win = newwin(10, 40, 5, 5);
+    WINDOW *menu_win = newwin(20, 45, 0, 0);
     
     int num_rooms;
     if(level_difficulty == 1){
@@ -312,7 +505,9 @@ void new_game() {
         //mvprintw(whole_height - 4, width/6, "Health: %d%%", player.health);
         display_health_bar_ncurses(player.health, 100, whole_height - 4 , width/6);
         // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
-        display_hunger_bar_ncurses(player.hunger, 100, whole_height - 2 , width/6);        
+        display_hunger_bar_ncurses(player.hunger, 100, whole_height - 3 , width/6);
+        display_weapons(player, whole_height, width);
+        mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  %s", player.equipped_weapon.name, player.equipped_weapon.symbol);         
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
@@ -322,11 +517,21 @@ void new_game() {
         // پاک کردن موقعیت قبلی بازیکن از نقشه
         map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
         if(previous_cell == 'g' && g_clicked == 0){
-            WINDOW *msg_win = newwin(3, 25, height/2, (width - 25)/2);
+            WINDOW *msg_win = newwin(3, 25, whole_height - 3, width/2 + 2);
             show_message(msg_win, "You collected 1 gold!");
+            wrefresh(msg_win);
+            map[player.y][player.x] = '.';
+            // مکث برای مشاهده پیام
+            sleep(1);
+        } else if(previous_cell == 'b' && g_clicked == 0){
+            WINDOW *msg_win = newwin(3, 30, whole_height - 3, width/2 + 2);
+            show_message(msg_win, "You collected 1 black gold!");
             wrefresh(msg_win);
             // مکث برای مشاهده پیام
             sleep(1);
+            map[player.y][player.x] = '.';
+        } else if((previous_cell == 'M' || previous_cell == 'S' || previous_cell == 'D' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
+            map[player.y][player.x] = '.';
         }
         g_clicked = 0;
         // مدیریت ورودی‌ها
@@ -482,6 +687,12 @@ void new_game() {
                 box(menu_win, 0, 0);
                 consume_food_ncurses(&player, menu_win);
                 break;
+            case 'i':
+            case 'I':
+                werase(menu_win); // پاک کردن محتوای قبلی
+                box(menu_win, 0, 0);
+                equip_weapon_ncurses(&player, menu_win);
+                break;
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;
@@ -556,11 +767,14 @@ void continue_game() {
         }
         attron(A_BOLD);
         mvprintw(whole_height - 4, 5, "Lives: %d", player.lives);
-        mvprintw(whole_height - 2, 5, "Health: %d%%", player.health);
-        mvprintw(whole_height - 4, width/4, "Golds: %d", player.collected_golds);
-        mvprintw(whole_height - 2, width/4, "Points: %d", player.points);
-        mvprintw(whole_height - 4, width/2 - 11, "Floor: %d", player.is_in_floor);
-        mvprintw(whole_height - 2, width/2 - 11, "hunger: %d%%", player.hunger);        
+        mvprintw(whole_height - 3, 5, "Floor: %d", player.is_in_floor);
+        mvprintw(whole_height - 2, 5, "Golds: %d", player.collected_golds);
+        mvprintw(whole_height - 1, 5, "Points: %d", player.points);
+        //mvprintw(whole_height - 4, width/6, "Health: %d%%", player.health);
+        display_health_bar_ncurses(player.health, 100, whole_height - 4 , width/6);
+        // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
+        display_hunger_bar_ncurses(player.hunger, 100, whole_height - 3 , width/6);
+        display_weapons(player, whole_height, width);         
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();

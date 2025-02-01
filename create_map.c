@@ -215,20 +215,26 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             }
             map[obs_y][obs_x] = 'o';
         }
-        int num_traps, num_talisman, num_gold;
+        int num_traps, num_talisman, num_gold, num_black_gold, num_weapon;
         if(rooms[i].theme == 'r'){
             num_gold = 2;
+            num_black_gold = rand() % 2;
             num_talisman = rand() % 2;
             num_traps = rand() % 2;
+            num_weapon = rand() % 3;
         } else if(rooms[i].theme == 't'){
-            num_gold = 3;      
+            num_gold = 4;      
+            num_black_gold = 2;
             num_talisman = 0;             
-            num_traps = rooms[i].width/3 + rand() % 3;           
+            num_traps = rooms[i].width/3 + rand() % 3;      
+            num_weapon = 0;     
         }  else if(rooms[i].theme == 'n'){
             int num_gold_halluc = rand() % 4; 
             num_gold = 0;
             num_talisman= rand() % 2;
             num_traps = 0;
+            num_black_gold = 0;
+            num_weapon = 0;   
             //گذاشتن طلا در اتاق
             for(int j = 0 ; j < num_gold_halluc ; j++){
                 int gold_x = rooms[i].start_x + rand() % (rooms[i].width);
@@ -240,9 +246,11 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
                 map[gold_y][gold_x] = 'h';
             }
         } else if(rooms[i].theme == 'e'){
+            num_black_gold = 0;
             num_gold =  rand() % 2;
-            num_talisman = rand() % 2;
+            num_talisman = rand() % 3 + 2;
             num_traps =  rand() % 2;
+            num_weapon = rand() % 2;
             //مخفی کردن در های اتاق
             for (int y = rooms[i].start_y; y < rooms[i].start_y + rooms[i].height; y++) {
                 for (int x = rooms[i].start_x; x < rooms[i].start_x + rooms[i].width; x++) {
@@ -261,6 +269,16 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
                 gold_y = rooms[i].start_y + rand() % (rooms[i].height);
             }
             map[gold_y][gold_x] = 'g';
+        }
+        //گذاشتن طلای سیاه در اتاق
+        for(int j = 0 ; j < num_black_gold ; j++){
+            int gold_x = rooms[i].start_x + rand() % (rooms[i].width);
+            int gold_y = rooms[i].start_y + rand() % (rooms[i].height);
+            while(map[gold_y][gold_x] != '.'){
+                gold_x = rooms[i].start_x + rand() % (rooms[i].width);
+                gold_y = rooms[i].start_y + rand() % (rooms[i].height);
+            }
+            map[gold_y][gold_x] = 'b';
         }
         ///گذاشتن طلسم در اتاق
         for(int j = 0 ; j < num_talisman ; j++){
@@ -282,6 +300,19 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             }
             map[trap_y][trap_x] = 'y';
         }
+        //گذاشتن اسلحه ها 
+        
+        for(int j = 0 ; j < num_weapon ; j++){
+            int weapon_x = rooms[i].start_x + rand() % (rooms[i].width);
+            int weapon_y = rooms[i].start_y + rand() % (rooms[i].height);
+            while(map[weapon_y][weapon_x] != '.'){
+                weapon_x = rooms[i].start_x + rand() % (rooms[i].width);
+                weapon_y = rooms[i].start_y + rand() % (rooms[i].height);
+            }
+            int type_num = rand() % 5;
+            char type[] = {'M', 'D', 'W', 'N', 'S'};
+            map[weapon_y][weapon_x] = type[type_num];
+        }
         //گذاشتن پله
         if(i == stair_room){
             int stair_x = rooms[i].start_x + rand() % (rooms[i].width);
@@ -302,6 +333,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             }
         }
         
+        
     }
 
     //گذاشتن غذا
@@ -309,7 +341,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         int room_index = rand() % num_rooms;
         int food_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
         int food_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
-        while(map[food_y][food_x] != '.'){
+        while(map[food_y][food_x] != '.' || rooms[room_index].theme == 'n'){
             room_index = rand() % num_rooms;
             food_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
             food_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
@@ -340,11 +372,16 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
     init_pair(4, COLOR_GREEN, COLOR_BLACK);
     init_pair(220, 220, COLOR_BLACK);   // gold
-    init_pair(11, COLOR_CYAN, COLOR_BLACK);  // ☁️ (Cloud)
+    init_pair(162, 162, COLOR_BLACK);  // ☁️ (Cloud)
     init_pair(196, 196, COLOR_BLACK); // ☺️ (Smile)
     init_pair(93, 93, COLOR_BLACK);  // ⚕️ (Medical Symbol)
     init_pair(35, 35, COLOR_BLACK);    // traps
     init_pair(205, 205, COLOR_BLACK);   // stairs
+    init_pair(130, 130, COLOR_BLACK);
+    init_pair(133, 133, COLOR_BLACK);
+    init_pair(31, 31, COLOR_BLACK);
+    init_pair(45, 45, COLOR_BLACK);
+    init_pair(143, 143, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️", "\u2695", "\u26c0", "\u25B2", "\u2615", "\u2663" , "\u2660"};
     // متغیر برای چک کردن آیا بازیکن در اتاق با تم 'n' است یا خیر
     int in_nightmare_room = 0;
@@ -367,78 +404,82 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                 if (abs(player.x - x) <= view_radius && abs(player.y - y) <= view_radius) {
                     attron(COLOR_PAIR(room_color));
                     if (map[y][x] == '|' || map[y][x] == '_') { // دیوارهای اتاق
-                        mvprintw(y, x, "%c", map[y][x]);
-                    } else if (map[y][x] == '.') { // فضای خالی اتاق
-                        mvprintw(y, x, ".");
-                    } else if (map[y][x] == '+') { // در اتاق
-                        mvprintw(y, x, "+");
-                    } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
-                        attron(COLOR_PAIR(1));
-                        mvprintw(y, x, "o");
-                        attroff(COLOR_PAIR(1));
-                        attron(COLOR_PAIR(room_color));
-                    } else if (map[y][x] == '=') { // پنجره اتاق
-                        mvprintw(y, x, "=");
-                    } else if(map[y][x] == 'g'){
-                        if(map_visited[y][x] == 0){
-                            attron(COLOR_PAIR(220));
-                            mvprintw(y, x, "\u26c0");
-                            attroff(COLOR_PAIR(220));
-                            attron(COLOR_PAIR(room_color));
-                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, "%c", map[y][x]);
+                        } else if (map[y][x] == '.') { // فضای خالی اتاق
                             mvprintw(y, x, ".");
-                        }
-                    } else if(map[y][x] == 't'){
-                        attron(COLOR_PAIR(93));
-                        mvprintw(y, x, "\u2695");
-                        attroff(COLOR_PAIR(93));
-                        attron(COLOR_PAIR(room_color));
-                    } else if(map[y][x] == 'y'){
-                        if(map_visited[y][x] == 0){
-                            mvprintw(y, x, ".");
-                        } else if(map_visited[y][x] == 1){
-                            attron(COLOR_PAIR(35));
-                            mvprintw(y, x, "\u2227");
-                            attroff(COLOR_PAIR(35));
-                            attron(COLOR_PAIR(room_color));
-                        }
-                    } else if(map[y][x] == 'h'){
-                        if(map_visited[y][x] == 0){
-                            attron(COLOR_PAIR(220));
-                            mvprintw(y, x, "\u26c0");
-                            attroff(COLOR_PAIR(220));
-                            attron(COLOR_PAIR(room_color));
-                        } else if(map_visited[y][x] == 1){
-                            mvprintw(y, x, ".");
-                        }
-                    } else if(map[y][x] == 'v'){
-                        if((y+1 < height && player.y == y + 1 && player.x == x) 
-                        || (y > 1 && player.y == y - 1 && player.x == x) 
-                        || (x+1 < width && player.x == x + 1 && player.y == y) 
-                        || (x > 1 && player.x == x - 1 && player.y == y)){
+                        } else if (map[y][x] == '+') { // در اتاق
                             mvprintw(y, x, "+");
+                        } else if (map[y][x] == 'o') { // نمایش اشیاء خاص (مثلاً آیتم‌ها)
+                            attron(COLOR_PAIR(1));
+                            mvprintw(y, x, "o");
+                            attroff(COLOR_PAIR(1));
+                            attron(COLOR_PAIR(room_color));
+                        } else if (map[y][x] == '=') { // پنجره اتاق
+                            mvprintw(y, x, "=");
+                        } else if(map[y][x] == 'g'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(220));
+                                mvprintw(y, x, "\u26c0");
+                                attroff(COLOR_PAIR(220));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        }else if(map[y][x] == 'b'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(162));
+                                mvprintw(y, x, "\u26c0");
+                                attroff(COLOR_PAIR(162));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 't'){
+                            attron(COLOR_PAIR(93));
+                            mvprintw(y, x, "%s", emojis[0]);
+                            attroff(COLOR_PAIR(93));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map[y][x] == 'y'){
+                            if(map_visited[y][x] == 0){
+                                mvprintw(y, x, ".");
+                            } else if(map_visited[y][x] == 1){
+                                attron(COLOR_PAIR(35));
+                                mvprintw(y, x, "\u2227");
+                                attroff(COLOR_PAIR(35));
+                                attron(COLOR_PAIR(room_color));
+                            }
+                        } else if(map[y][x] == 'h'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(220));
+                                mvprintw(y, x, "\u26c0");
+                                attroff(COLOR_PAIR(220));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 'v'){
+                            if((y+1 < height && player.y == y + 1 && player.x == x) 
+                            || (y > 1 && player.y == y - 1 && player.x == x) 
+                            || (x+1 < width && player.x == x + 1 && player.y == y) 
+                            || (x > 1 && player.x == x - 1 && player.y == y)){
+                                mvprintw(y, x, "+");
+                            }
+                            else mvprintw(y, x, " ");
+                        } else if(map[y][x] == '<'){
+                            attron(COLOR_PAIR(205));
+                            mvprintw(y, x, "<");
+                            attroff(COLOR_PAIR(205));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map[y][x] == 'f'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(196));
+                                mvprintw(y, x, "%s", emojis[7]);
+                                attroff(COLOR_PAIR(196));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
                         }
-                        else mvprintw(y, x, " ");
-                    } else if(map[y][x] == '<'){
-                        attron(COLOR_PAIR(205));
-                        mvprintw(y, x, "<");
-                        attroff(COLOR_PAIR(205));
-                        attron(COLOR_PAIR(room_color));
-                    } else if(map[y][x] == '@'){
-                        if (player.color == 'r') {
-                            attron(COLOR_PAIR(2));
-                            mvprintw(y, x, "@");
-                            attroff(COLOR_PAIR(2));
-                        } else if (player.color == 'g') {
-                            attron(COLOR_PAIR(4));
-                            mvprintw(y, x, "@");
-                            attroff(COLOR_PAIR(4));
-                        } else if (player.color == 'b') {
-                            attron(COLOR_PAIR(3));
-                            mvprintw(y, x, "@");
-                            attroff(COLOR_PAIR(3));
-                        }
-                    }
                     attroff(COLOR_PAIR(room_color));
                 } else {
                     // خارج از محدوده دید
@@ -500,6 +541,15 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
+                        }else if(map[y][x] == 'b'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(162));
+                                mvprintw(y, x, "\u26c0");
+                                attroff(COLOR_PAIR(162));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
                         } else if(map[y][x] == 't'){
                             attron(COLOR_PAIR(93));
                             mvprintw(y, x, "%s", emojis[0]);
@@ -541,6 +591,51 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                                 attron(COLOR_PAIR(196));
                                 mvprintw(y, x, "%s", emojis[7]);
                                 attroff(COLOR_PAIR(196));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 'M'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(130));
+                                mvprintw(y, x, "\u2692");
+                                attroff(COLOR_PAIR(130));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 'D'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(133));
+                                mvprintw(y, x, "\u2020");
+                                attroff(COLOR_PAIR(133));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 'W'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(31));
+                                mvprintw(y, x, "\u269A");
+                                attroff(COLOR_PAIR(31));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 'N'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(45));
+                                mvprintw(y, x, "\u27B3");
+                                attroff(COLOR_PAIR(45));
+                                attron(COLOR_PAIR(room_color));
+                            } else if(map_visited[y][x] == 1){
+                                mvprintw(y, x, ".");
+                            }
+                        } else if(map[y][x] == 'S'){
+                            if(map_visited[y][x] == 0){
+                                attron(COLOR_PAIR(143));
+                                mvprintw(y, x, "\u2694");
+                                attroff(COLOR_PAIR(143));
                                 attron(COLOR_PAIR(room_color));
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
@@ -636,11 +731,16 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
     init_pair(25, 25, COLOR_BLACK);
     init_pair(95, 95, COLOR_BLACK);
     init_pair(220, 220, COLOR_BLACK);   // gold
-    init_pair(11, COLOR_CYAN, COLOR_BLACK);  // ☁️ (Cloud)
+    init_pair(162, 162, COLOR_BLACK);  // ☁️ (Cloud)
     init_pair(196, 196, COLOR_BLACK); // ☺️ (Smile)
     init_pair(93, 93, COLOR_BLACK);  // ⚕️ (Medical Symbol)
     init_pair(35, 35, COLOR_BLACK);    // traps
     init_pair(205, 205, COLOR_BLACK);   // stairs
+    init_pair(130, 130, COLOR_BLACK);
+    init_pair(133, 133, COLOR_BLACK);
+    init_pair(31, 31, COLOR_BLACK);
+    init_pair(45, 45, COLOR_BLACK);
+    init_pair(143, 143, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️", "\u2695", "\u26c0", "\u25B2", "\u2615", "\u2663" , "\u2660"};
     int room_color;
     for (int r = 0; r < num_rooms; r++) {
@@ -687,6 +787,16 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                             mvprintw(y, x, ".");
                         }
                         break;
+                    case 'b':
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(162));
+                            mvprintw(y, x, "\u26c0");
+                            attroff(COLOR_PAIR(162));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
+                        
                     case 't': // طلسم
                         attron(COLOR_PAIR(93));
                         mvprintw(y, x, "%s", emojis[0]);
@@ -729,10 +839,64 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         else mvprintw(y, x, " ");
                         break;
                     case 'f':
-                        attron(COLOR_PAIR(196));
-                        mvprintw(y, x, "%s", emojis[7]);
-                        attroff(COLOR_PAIR(196));
-                        attron(COLOR_PAIR(room_color));
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(196));
+                            mvprintw(y, x, "%s", emojis[7]);
+                            attroff(COLOR_PAIR(196));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
+                        break;
+                    case 'M':
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(130));
+                            mvprintw(y, x, "\u2692");
+                            attroff(COLOR_PAIR(130));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
+                        break;
+                    case 'D':
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(133));
+                            mvprintw(y, x, "\u2020");
+                            attroff(COLOR_PAIR(133));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
+                        break;
+                    case 'W':
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(31));
+                            mvprintw(y, x, "\u269A");
+                            attroff(COLOR_PAIR(31));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
+                        break;
+                    case 'N':
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(45));
+                            mvprintw(y, x, "\u27B3");
+                            attroff(COLOR_PAIR(45));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
+                        break;
+                    case 'S':
+                        if(map_visited[y][x] == 0){
+                            attron(COLOR_PAIR(143));
+                            mvprintw(y, x, "\u2694");
+                            attroff(COLOR_PAIR(143));
+                            attron(COLOR_PAIR(room_color));
+                        } else if(map_visited[y][x] == 1){
+                            mvprintw(y, x, ".");
+                        }
                         break;
                 }
             }

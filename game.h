@@ -11,6 +11,25 @@ typedef struct {
     int restore_hunger;
 } Food;
 
+// تعریف انواع سلاح
+typedef enum {
+    MACE,
+    DAGGER,
+    MAGIC_WAND,
+    NORMAL_ARROW,
+    SWORD
+} WeaponType;
+
+// ساختار برای سلاح
+typedef struct {
+    WeaponType type;
+    char name[20];
+    char symbol[5];  // برای نگه‌داری کاراکترهای Unicode
+    int damage;
+    int weight;
+} Weapon;
+
+
 typedef struct{
     int x;
     int y;
@@ -24,6 +43,9 @@ typedef struct{
     int hunger; // سطح گرسنگی
     Food inventory[5];
     int food_count;
+    Weapon Weapon_list[10];
+    int Weapon_count;
+    Weapon equipped_weapon;
 }Player;
 
 typedef struct {

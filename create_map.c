@@ -214,6 +214,9 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
     rooms[num_regular_rooms + num_treasure_rooms + num_enchant_rooms].theme = 'n'; //nightmare rooms
     //گذاشتن چیز میزای دیگه تو اتاقا
     int stair_room = rand() % (num_rooms-1) + 1;
+    while(rooms[stair_room].theme == 'n'){
+        stair_room = rand() % (num_rooms-1) + 1;
+    }
     for(int i = 0; i < num_rooms ; i++){
         //پنجره داخل هر اتاق به طور تصادفی
         int num_window = rand() % 2;
@@ -340,7 +343,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             map[weapon_y][weapon_x] = type[type_num];
         }
         //گذاشتن پله
-        if(i == stair_room){
+        if(i == stair_room && player->is_in_floor < 4){
             int stair_x = rooms[i].start_x + rand() % (rooms[i].width);
             int stair_y = rooms[i].start_y + rand() % (rooms[i].height);
             while(map[stair_y][stair_x] != '.'){
@@ -349,6 +352,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             }
             map[stair_y][stair_x] = '<';
         }
+
         if(rooms[i].theme == 'n'){
             for (int y = rooms[i].start_y; y < rooms[i].start_y + rooms[i].height; y++) {
                 for (int x = rooms[i].start_x; x < rooms[i].start_x + rooms[i].width; x++) {
@@ -364,6 +368,9 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
 
     //گذاشتن غذا
     for(int i = 0; i < 7; i++){
+        if(rooms[i].theme == 'n'){
+            continue;
+        }
         int room_index = rand() % num_rooms;
         int food_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
         int food_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
@@ -421,7 +428,19 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         monsters[i].y = monster_y;
         map[monster_y][monster_x] = type[type_num];
     }
-
+    
+    //گذاشتن علامت گنج
+    if(player->is_in_floor == 4){
+        int room_index = rand() % num_rooms;
+        int Treasure_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
+        int Treasure_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
+        while(map[Treasure_y][Treasure_x] != '.' || rooms[room_index].theme == 't' || rooms[room_index].theme == 'n'){
+            room_index = rand() % num_rooms;
+            Treasure_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
+            Treasure_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
+        }
+        map[Treasure_y][Treasure_x] = '*';
+    }
 
     return map;
 }
@@ -451,6 +470,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
     init_pair(88, 88, COLOR_BLACK);
     init_pair(226, 226, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️", "\u2695", "\u26c0", "\u25B2", "\u2615", "\u2663" , "\u2660"};
+    const char *emojisn[] = {"\u2663", "\u2020", "\u269A", "\u27B3", "\u2694", "\u2695", "\u26f7", "\u2620"};
     // متغیر برای چک کردن آیا بازیکن در اتاق با تم 'n' است یا خیر
     int in_nightmare_room = 0;
 
@@ -484,29 +504,6 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             attron(COLOR_PAIR(room_color));
                         } else if (map[y][x] == '=') { // پنجره اتاق
                             mvprintw(y, x, "=");
-                        } else if(map[y][x] == 'g'){
-                            if(map_visited[y][x] == 0){
-                                attron(COLOR_PAIR(220));
-                                mvprintw(y, x, "\u26c0");
-                                attroff(COLOR_PAIR(220));
-                                attron(COLOR_PAIR(room_color));
-                            } else if(map_visited[y][x] == 1){
-                                mvprintw(y, x, ".");
-                            }
-                        } else if(map[y][x] == 'b'){
-                            if(map_visited[y][x] == 0){
-                                attron(COLOR_PAIR(162));
-                                mvprintw(y, x, "\u26c0");
-                                attroff(COLOR_PAIR(162));
-                                attron(COLOR_PAIR(room_color));
-                            } else if(map_visited[y][x] == 1){
-                                mvprintw(y, x, ".");
-                            }
-                        } else if(map[y][x] == 't'){
-                            attron(COLOR_PAIR(93));
-                            mvprintw(y, x, "%s", emojis[0]);
-                            attroff(COLOR_PAIR(93));
-                            attron(COLOR_PAIR(room_color));
                         } else if(map[y][x] == 'y'){
                             if(map_visited[y][x] == 0){
                                 mvprintw(y, x, ".");
@@ -518,8 +515,9 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             }
                         } else if(map[y][x] == 'h'){
                             if(map_visited[y][x] == 0){
+                                int random_emoji = rand() % 8;
                                 attron(COLOR_PAIR(220));
-                                mvprintw(y, x, "\u26c0");
+                                mvprintw(y, x, "%s", emojisn[random_emoji]);
                                 attroff(COLOR_PAIR(220));
                                 attron(COLOR_PAIR(room_color));
                             } else if(map_visited[y][x] == 1){
@@ -538,14 +536,19 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             mvprintw(y, x, "<");
                             attroff(COLOR_PAIR(205));
                             attron(COLOR_PAIR(room_color));
-                        } else if(map[y][x] == 'f'){
-                            if(map_visited[y][x] == 0){
-                                attron(COLOR_PAIR(196));
-                                mvprintw(y, x, "%s", emojis[7]);
-                                attroff(COLOR_PAIR(196));
-                                attron(COLOR_PAIR(room_color));
-                            } else if(map_visited[y][x] == 1){
-                                mvprintw(y, x, ".");
+                        } else if (map[y][x] == '@') { // نمایش بازیکن
+                            if (player.color == 'r') {
+                                attron(COLOR_PAIR(2));
+                                mvprintw(y, x, "@");
+                                attroff(COLOR_PAIR(2));
+                            } else if (player.color == 'g') {
+                                attron(COLOR_PAIR(4));
+                                mvprintw(y, x, "@");
+                                attroff(COLOR_PAIR(4));
+                            } else if (player.color == 'b') {
+                                attron(COLOR_PAIR(3));
+                                mvprintw(y, x, "@");
+                                attroff(COLOR_PAIR(3));
                             }
                         }
                     attroff(COLOR_PAIR(room_color));
@@ -722,6 +725,11 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             }
                         } else if(map[y][x] == 'D'|| map[y][x] == 'F'|| map[y][x] == 'G'|| map[y][x] == 'S'|| map[y][x] == 'U'){
                             mvprintw(y, x, "%c", map[y][x]);
+                        } else if(map[y][x] == '*'){
+                            attron(COLOR_PAIR(226));
+                            mvprintw(y, x, "\u2600");
+                            attroff(COLOR_PAIR(226));
+                            attron(COLOR_PAIR(room_color));
                         } else{
                             mvprintw(y, x, "%c", map[y][x]);
                         }
@@ -829,6 +837,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
     init_pair(88, 88, COLOR_BLACK);
     init_pair(226, 226, COLOR_BLACK);
     const char *emojis[] = {"☠️", "☁️", "☺️", "\u2695", "\u26c0", "\u25B2", "\u2615", "\u2663" , "\u2660"};
+    const char *emojisn[] = {"\u2663", "\u2020", "\u269A", "\u27B3", "\u2694", "\u2695", "\u26f7", "\u2620"};
     int room_color;
     for (int r = 0; r < num_rooms; r++) {
         if(rooms[r].theme == 'r'){
@@ -902,8 +911,9 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         break;
                     case 'h':
                         if(map_visited[y][x] == 0){
+                            int random_emoji = rand() % 8;
                             attron(COLOR_PAIR(220));
-                            mvprintw(y, x, "\u26c0");
+                            mvprintw(y, x, "%s", emojisn[random_emoji]);
                             attroff(COLOR_PAIR(220));
                             attron(COLOR_PAIR(room_color));
                         } else if(map_visited[y][x] == 1){
@@ -1012,6 +1022,12 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         } else if(map_visited[y][x] == 1){
                             mvprintw(y, x, ".");
                         }
+                        break;
+                    case '*':
+                        attron(COLOR_PAIR(226));
+                        mvprintw(y, x, "\u2600");
+                        attroff(COLOR_PAIR(226));
+                        attron(COLOR_PAIR(room_color));
                         break;
                     default:
                         mvprintw(y, x, "%c", map[y][x]);

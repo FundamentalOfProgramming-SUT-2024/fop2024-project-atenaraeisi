@@ -113,6 +113,9 @@ void creat_account(int rows, int cols){
         getstr(user1->email);
     }
     user1->rank = 0;
+    user1->points = 0;
+    user1->golds = 0;
+    user1->times_played = 0;
     
     FILE* users_info = fopen("users_info.txt", "a");
 

@@ -1226,8 +1226,8 @@ void new_game() {
     }
 
     if(have_account){
-        user1->points = player.score;
-        user1->golds = player.collected_golds;
+        user1->points += player.score;
+        user1->golds += player.collected_golds;
         user1->times_played++;
         save_user(user1);
     }

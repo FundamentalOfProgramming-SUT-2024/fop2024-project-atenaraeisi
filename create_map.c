@@ -11,7 +11,7 @@
 bool is_valid_position(char **map, int x, int y) {
     return map[y][x] == '.';
 }
-Monster createMonster(int type) {
+
     Monster m;
     switch (type) {
         case 0:
@@ -24,7 +24,7 @@ Monster createMonster(int type) {
             m = (Monster){'G', "Giant", 15, 7, 0, 0, 2, 0, true};
             break;
         case 3:
-            m = (Monster){'S', "Snake", 3, 1, 0, 0, 1, 0, true};
+            m = (Monster){'S', "Snake", 20, 1, 0, 0, 1, 0, true};
             break;
         case 4:
             m = (Monster){'U', "Undead", 30, 5, 0, 0, 4, 0, true};
@@ -336,7 +336,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
                 weapon_y = rooms[i].start_y + rand() % (rooms[i].height);
             }
             int type_num = rand() % 4;
-            char type[] = {'e', 'W', 'N', 'l'};
+            char type[] = {'E', 'W', 'N', 'L'};
             map[weapon_y][weapon_x] = type[type_num];
         }
         //گذاشتن پله
@@ -657,16 +657,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } else if(map[y][x] == 'M'){
-                            if(map_visited[y][x] == 0){
-                                attron(COLOR_PAIR(130));
-                                mvprintw(y, x, "\u2692");
-                                attroff(COLOR_PAIR(130));
-                                attron(COLOR_PAIR(room_color));
-                            } else if(map_visited[y][x] == 1){
-                                mvprintw(y, x, ".");
-                            }
-                        } else if(map[y][x] == 'e'){
+                        } else if(map[y][x] == 'E' || map[y][x] == 'e'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(133));
                                 mvprintw(y, x, "\u2020");
@@ -675,7 +666,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } else if(map[y][x] == 'W'){
+                        } else if(map[y][x] == 'W' || map[y][x] == 'w'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(31));
                                 mvprintw(y, x, "\u269A");
@@ -684,7 +675,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } else if(map[y][x] == 'N'){
+                        } else if(map[y][x] == 'N' || map[y][x] == 'n'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(45));
                                 mvprintw(y, x, "\u27B3");
@@ -693,7 +684,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } else if(map[y][x] == 'l'){
+                        } else if(map[y][x] == 'L' || map[y][x] == 'l'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(143));
                                 mvprintw(y, x, "\u2694");
@@ -949,6 +940,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         }
                         break;
                     case 'e':
+                    case 'E':
                         if(map_visited[y][x] == 0){
                             attron(COLOR_PAIR(133));
                             mvprintw(y, x, "\u2020");
@@ -959,6 +951,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         }
                         break;
                     case 'W':
+                    case 'w':
                         if(map_visited[y][x] == 0){
                             attron(COLOR_PAIR(31));
                             mvprintw(y, x, "\u269A");
@@ -969,6 +962,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         }
                         break;
                     case 'N':
+                    case 'n':
                         if(map_visited[y][x] == 0){
                             attron(COLOR_PAIR(45));
                             mvprintw(y, x, "\u27B3");
@@ -978,6 +972,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                             mvprintw(y, x, ".");
                         }
                         break;
+                    case 'L':
                     case 'l':
                         if(map_visited[y][x] == 0){
                             attron(COLOR_PAIR(143));

@@ -36,9 +36,11 @@ typedef enum {
 // ساختار برای سلاح
 typedef struct {
     WeaponType type;
+    char symbol_on_map;
     char name[20];
     char symbol[5];  // برای نگه‌داری کاراکترهای Unicode
     int damage;
+    int range;
     int is_melee;
     int numbers;
     int is_consumable;
@@ -60,8 +62,8 @@ typedef struct {
     TalismanType type;
     char name[20];
     char symbol[5];  // برای نگه‌داری کاراکترهای Unicode
-    int damage;
-    int weight;
+    int lifetime;
+    int active;
 } talisman;
 
 typedef struct{
@@ -75,6 +77,9 @@ typedef struct{
     int lives;
     int health;
     int health_increaser;
+    int health_speed;
+    int speed;
+    int power;
     int hunger; // سطح گرسنگی
     Food inventory[5];
     int food_count;
@@ -82,6 +87,7 @@ typedef struct{
     int Weapon_count;
     Weapon equipped_weapon;
     talisman talisman_list[10];
+    talisman current_talisman;
     int talisman_count;
 }Player;
 

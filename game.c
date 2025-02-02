@@ -77,33 +77,6 @@ void moveMonster(Monster *m, Player hero, char **map) {
             break;
     }
 }
-/*void moveRandomly(Monster *m) {
-    int direction = rand() % 4; // تولید عدد تصادفی بین 0 تا 3
-
-    switch(direction) {
-        case 0: m->y--; break; // حرکت به بالا
-        case 1: m->y++; break; // حرکت به پایین
-        case 2: m->x--; break; // حرکت به چپ
-        case 3: m->x++; break; // حرکت به راست
-    }
-}
-void moveTowardsHero(Monster *m, Hero *h) {
-    if (m->x < h->x) {
-        m->x++; // حرکت به راست
-    } else if (m->x > h->x) {
-        m->x--; // حرکت به چپ
-    }
-
-    if (m->y < h->y) {
-        m->y++; // حرکت به پایین
-    } else if (m->y > h->y) {
-        m->y--; // حرکت به بالا
-    }
-}
-
-void drawMonster(Monster m, int x, int y) {
-    mvaddch(y, x, m.symbol);
-}*/
 
 talisman createTalisman(TalismanType type) {
     talisman talisman;
@@ -112,20 +85,20 @@ talisman createTalisman(TalismanType type) {
         case HEALTH:
             strcpy(talisman.name, "Health talisman");
             strcpy(talisman.symbol, "\u2695");
-            talisman.damage = 15;
-            talisman.weight = 10;
+            talisman.lifetime = 0;
+            talisman.active = 0;
             break;
         case SPEED:
             strcpy(talisman.name, "speed talisman");
             strcpy(talisman.symbol, "\u26f7");
-            talisman.damage = 8;
-            talisman.weight = 3;
+            talisman.lifetime = 0;
+            talisman.active = 0;
             break;
         case DAMAGE:
             strcpy(talisman.name, "damage talisman");
             strcpy(talisman.symbol, "\u2620");
-            talisman.damage = 12;
-            talisman.weight = 5;
+            talisman.lifetime = 0;
+            talisman.active = 0;
             break;
     }
 
@@ -139,11 +112,11 @@ void talisman_menu(Player *player, WINDOW *menu_win) {
         return;
     }
 
-    // نمایش منوی سلاح‌ها
+    // نمایش منوی طلسم ها
     mvwprintw(menu_win, 1, 1, "Choose a talisman to equip:");
     for (int i = 0; i < player->talisman_count; i++) {
-        mvwprintw(menu_win, 2 + i, 1, "%d. %s (Damage: %d, Weight: %d)", 
-                  i + 1, player->talisman_list[i].name, player->talisman_list[i].damage, player->talisman_list[i].weight);
+        mvwprintw(menu_win, 2 + i, 1, "%d. %s ", 
+                  i + 1, player->talisman_list[i].name);
     }
     mvwprintw(menu_win, 2 + player->talisman_count, 1, "Press the number of your choice: ");
     wrefresh(menu_win);
@@ -157,14 +130,32 @@ void talisman_menu(Player *player, WINDOW *menu_win) {
         return;
     }
 
-    // تجهیز سلاح
-    /*talisman selected_talisman = player->talisman_list[choice - 1];
-    player->equipped_talisman = selected_talisman;
-
-    mvwprintw(menu_win, 2 + player->talisman_count + 2, 1, "You equipped %s.", selected_talisman.name);
+    // تجهیز طلسم
+    talisman selected_talisman = player->talisman_list[choice - 1];
+    switch (selected_talisman.type) {
+        case HEALTH:
+            player->health_speed = 2;
+            break;
+        case SPEED:
+            player->speed = 2;
+            break;
+        case DAMAGE:
+            player->power = 2;
+            break;
+    }
+    player->talisman_list[choice - 1].active = 1;
+    player->current_talisman = player->talisman_list[choice - 1];
+    player->current_talisman.lifetime = 0;
+    mvwprintw(menu_win, 2 + player->talisman_count + 2, 1, "You choosed %s talisman.", selected_talisman.name);
     wrefresh(menu_win);
-    sleep(1);*/
+    sleep(1);
+    for (int j = choice - 1; j < player->talisman_count - 1; j++) {
+        player->talisman_list[j] = player->talisman_list[j+1];
+    }
+    player->talisman_count--;  
+
 }
+
 // تابعی برای ایجاد یک سلاح جدید
 Weapon createWeapon(WeaponType type) {
     Weapon weapon;
@@ -175,6 +166,7 @@ Weapon createWeapon(WeaponType type) {
             strcpy(weapon.symbol, "\u2692");
             weapon.damage = 5;
             weapon.is_melee = 1;
+            weapon.range = 1;
             weapon.numbers = 0;
             weapon.is_consumable = 0;
             break;
@@ -183,23 +175,29 @@ Weapon createWeapon(WeaponType type) {
             strcpy(weapon.symbol, "\u2020");
             weapon.damage = 12;
             weapon.is_melee = 1;
+            weapon.range = 5;
             weapon.numbers = 0;
             weapon.is_consumable = 1;
+            weapon.symbol_on_map = 'e';
             break;
         case MAGIC_WAND:
             strcpy(weapon.name, "Magic Wand");
             strcpy(weapon.symbol, "\u269A");
             weapon.damage = 15;
             weapon.is_melee = 0;
+            weapon.range = 10;
             weapon.numbers = 0;
             weapon.is_consumable = 1;
+            weapon.symbol_on_map = 'w';
             break;
         case NORMAL_ARROW:
             strcpy(weapon.name, "Normal Arrow");
             strcpy(weapon.symbol, "\u27B3");
             weapon.damage = 5;
+            weapon.range = 5;
             weapon.is_melee = 0;
             weapon.numbers = 0;
+            weapon.symbol_on_map = 'n';
             weapon.is_consumable = 1;
             break;
         case SWORD:
@@ -207,8 +205,10 @@ Weapon createWeapon(WeaponType type) {
             strcpy(weapon.symbol, "\u2694");
             weapon.damage = 10;
             weapon.is_melee = 1;
+            weapon.range = 1;
             weapon.numbers = 0;
             weapon.is_consumable = 0;
+            weapon.symbol_on_map = 'l';
             break;
     }
 
@@ -281,9 +281,14 @@ void equip_weapon_ncurses(Player *player, WINDOW *menu_win) {
         wrefresh(menu_win);
         sleep(1);
         return;
+    } else if(strcmp(player->equipped_weapon.symbol , " ") != 0){
+        mvwprintw(menu_win, line + 2, 1, "Put your current weapon in the bag first!");
+        wrefresh(menu_win);
+        sleep(1);
+        return;
     }
 
-    // تجهیز سلاح فقط در صورتی که سلاح متفاوت باشد
+    // تجهیز سلاح
     Weapon selected_weapon = player->Weapon_list[choice - 1];
     if (strcmp(player->equipped_weapon.name, selected_weapon.name) == 0) {
         mvwprintw(menu_win, line++, 1, "You already have this weapon equipped.");
@@ -337,7 +342,8 @@ void display_health_bar_ncurses(int health, int max_health, int y, int x) {
     for (int i = filled; i < bar_length; i++) {
         printw("-"); // قسمت خالی
     }
-    printw("] %d%%", health, max_health);
+    printw("]");
+    printw("%d%%", health);
 
     refresh(); // به‌روزرسانی پنجره
 }
@@ -389,6 +395,16 @@ void consume_food_ncurses(Player *player, WINDOW *menu_win) {
         wrefresh(menu_win);               
         sleep(1);
     }
+}
+
+// تابع بررسی و بازگرداندن هیولا در موقعیت مشخص
+Monster* getMonsterAtPosition(Monster monsters[], int monster_count, int x, int y) {
+    for (int i = 0; i < monster_count; i++) {
+        if (monsters[i].x == x && monsters[i].y == y && monsters[i].health > 0) {
+            return &monsters[i];  // بازگرداندن اشاره‌گر به هیولای پیدا شده
+        }
+    }
+    return NULL;  // در صورتی که هیولایی پیدا نشود
 }
 
 int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7]){
@@ -449,7 +465,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
         } else{
             return 0;
         }
-    } else if(map[y][x] == 'e'){
+    } else if(map[y][x] == 'E'){
         WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
         show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
         wrefresh(msg_win);
@@ -482,13 +498,62 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
         } else{
             return 0;
         }
-    } else if(map[y][x] == 'l'){
+    } else if(map[y][x] == 'L'){
         WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
         show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
         wrefresh(msg_win);
         int choice = getch();
         if(choice == 'y' && player->Weapon_list[4].numbers == 0){
             player->Weapon_list[4].numbers += 1;
+            return 1;
+        } else if(player->Weapon_list[4].numbers > 0){
+            WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
+            show_message(msg_win, "You have already sword!");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(1);
+            return 0;
+        } else return 0;
+    } else if(map[y][x] == 'e'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            player->Weapon_list[1].numbers ++;
+            return 1;
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'w'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            player->Weapon_list[2].numbers ++;
+            return 1;
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'n'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y'){
+            player->Weapon_list[3].numbers ++;
+            return 1;
+        } else{
+            return 0;
+        }
+    } else if(map[y][x] == 'l'){
+        WINDOW *msg_win = newwin(3, 50, (height - 5)/2, (width - 50)/2);
+        show_message(msg_win, "Do you want to pick up this weapon?(click y/n)");
+        wrefresh(msg_win);
+        int choice = getch();
+        if(choice == 'y' && player->Weapon_list[4].numbers == 0){
+            player->Weapon_list[4].numbers ++;
             return 1;
         } else if(player->Weapon_list[4].numbers > 0){
             WINDOW *msg_win = newwin(3, 50, height - 3, width/2 + 2);
@@ -631,6 +696,12 @@ void new_game() {
     player.Weapon_list[3] = createWeapon(NORMAL_ARROW);
     player.Weapon_list[4] = createWeapon(SWORD);
     player.talisman_count = 0;
+    talisman current_talisman = {0};  // تمام فیلدها صفر می‌شوند.
+    player.current_talisman = current_talisman;
+    player.speed = 1;
+    player.health_speed = 1;
+    player.power = 1;
+    int talisman_lifetime = 0;
     
     // پنجره منوی غذا
     WINDOW *menu_win = newwin(20, 45, 0, 0);
@@ -674,9 +745,28 @@ void new_game() {
     bool game_running = true;
     int g_clicked = 0;
     time_t last_update = time(NULL);    
+
     // حلقه اصلی بازی
     while (game_running) {
-        player.health_increaser++;
+        //مدیریت زمان اثر طلسم
+        if(player.current_talisman.active){
+            player.current_talisman.lifetime++;
+                if(player.current_talisman.lifetime >= 10){
+                    switch (player.current_talisman.type) {
+                    case HEALTH:
+                        player.health_speed = 1;
+                        break;
+                    case SPEED:
+                        player.speed = 1;
+                        break;
+                    case DAMAGE:
+                        player.power = 1;
+                        break;
+                    }
+                    player.current_talisman = current_talisman;
+                }
+        }
+        player.health_increaser += player.health_speed;
         if(player.health_increaser >= 30 && player.health < 100 && player.hunger == 100){
             player.health++;
             player.health_increaser = 0;
@@ -740,12 +830,21 @@ void new_game() {
         // رسم بازیکن روی نقشه
         map[player.y][player.x] = '@';
 
+        //حرکت دادن هیولاهای توی اتاق
         for (int i = 0; i < num_monster; i++) {
             if (monsters[i].x > current.start_x && monsters[i].x < current.start_x + current.width &&
-                monsters[i].y > current.start_y && monsters[i].y < current.start_y + current.height) {
-                map[monsters[i].y][monsters[i].x] = '.';
-                moveMonster(&monsters[i], player , map);
-                map[monsters[i].y][monsters[i].x] = monsters[i].symbol;
+                monsters[i].y > current.start_y && monsters[i].y < current.start_y + current.height && monsters[i].active == true) {
+                if(monsters[i].health == 0){
+                    map[monsters[i].y][monsters[i].x] = '.';
+                    monsters[i].active = false;
+                    mvprintw(whole_height - 2, width/2 + 2, "You killed the enemy  %s", monsters[i].name);
+                    refresh();
+                    usleep(1500000);
+                } else{
+                    map[monsters[i].y][monsters[i].x] = '.';
+                    moveMonster(&monsters[i], player , map);
+                    map[monsters[i].y][monsters[i].x] = monsters[i].symbol;
+                }
             }
         }
         // نمایش نقشه
@@ -803,64 +902,64 @@ void new_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && can_go(player.y-1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                    player.y--;
+                if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                    player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                    player.y++;
+                if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                    player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
                 }
                     
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && can_go(player.y , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x--;
+                if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x -= player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
                 }
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x++;
+                if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x += player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x++;
-                    player.y--;
+                if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x += player.speed;
+                    player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x++;
-                    player.y++;
+                if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x += player.speed;
+                    player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_HOME:
-                if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x--;
-                    player.y--;
+                if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x -= player.speed;
+                    player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                 break;
             case KEY_END:
-                if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x--;
-                    player.y++;
+                if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x -= player.speed;
+                    player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
                 }
@@ -883,64 +982,64 @@ void new_game() {
                 int ch2 = getch();
                 switch (ch2) {
                     case KEY_UP:
-                        if (player.y > 0 && can_go(player.y-1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                            player.y--;
+                        if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                            player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
                             
                         break;
                     case KEY_DOWN:
-                        if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                            player.y++;
+                        if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                            player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
                         }
                             
                         break;
                     case KEY_LEFT:
-                        if (player.x > 0 && can_go(player.y , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x--;
+                        if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x -= player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '-';
                         }
                         
                         break;
                     case KEY_RIGHT:
-                        if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x++;
+                        if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x += player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '+';
                         }
                         break;
                     case KEY_PPAGE:
-                        if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x++;
-                            player.y--;
+                        if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x += player.speed;
+                            player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
                         break;
                     case KEY_NPAGE:
-                        if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x++;
-                            player.y++;
+                        if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x += player.speed;
+                            player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
                         }
                         break;
                     case KEY_HOME:
-                        if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x--;
-                            player.y--;
+                        if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x -= player.speed;
+                            player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
                         break;
                     case KEY_END:
-                        if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x--;
-                            player.y++;
+                        if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x -= player.speed;
+                            player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
                         }
@@ -965,63 +1064,87 @@ void new_game() {
                 box(menu_win, 0, 0);
                 talisman_menu(&player, menu_win);
                 break;
-            // case '32':
-            // case ' ':
-            //     if (player->equipped_weapon.numbers <= 0 && player->equipped_weapon.is_consumable) {
-            //         mvprintw(0, 0, "Your weapon is over!");
-            //         break;
-            //     }
+            case ' ':
+                if (player.equipped_weapon.numbers <= 0 && player.equipped_weapon.is_consumable) {
+                    mvprintw(whole_height - 2, width/2 + 2, "Your weapon is over!");
+                    refresh();
+                    sleep(1);
+                    break;
+                }
+                if (player.equipped_weapon.is_melee) { 
+                    // ضربه به ۸ جهت
+                    int dirs[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, 
+                                    {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+                    for (int i = 0; i < 8; i++) {
+                        int new_x = player.x + dirs[i][0];
+                        int new_y = player.y + dirs[i][1];
+                        Monster *enemy = getMonsterAtPosition(monsters, num_monster, new_x, new_y);
+                        if (enemy) {
+                            enemy->health -= player.equipped_weapon.damage;
+                            if(enemy->health <= 0){
+                                enemy->health = 0;
+                            }
+                            else mvprintw(whole_height - 2, width/2 + 2, "You hit %s, remaining health: %d", enemy->name, enemy->health);
+                            refresh();
+                            sleep(1);
+                        }
+                    }
+                } else {
+                    // دریافت جهت پرتاب
+                    int dir = getch();
+                    int dx = 0, dy = 0;
+                    if (dir == KEY_UP) dy = -1;
+                    else if (dir == KEY_DOWN) dy = 1;
+                    else if (dir == KEY_LEFT) dx = -1;
+                    else if (dir == KEY_RIGHT) dx = 1;
 
-            //     if (player->equipped_weapon.is_melee) { 
-            //         // ضربه به ۸ جهت
-            //         int dirs[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, 
-            //                         {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-            //         for (int i = 0; i < 8; i++) {
-            //             int new_x = player->x + dirs[i][0];
-            //             int new_y = player->y + dirs[i][1];
-            //             Enemy *enemy = get_enemy_at(new_x, new_y);
-            //             if (enemy) {
-            //                 enemy->hp -= player->equipped_weapon.damage;
-            //                 mvprintw(1, 0, "You hit %s, remaining HP: %d", enemy->name, enemy->hp);
-            //             }
-            //         }
-            //     } else {
-            //         // دریافت جهت پرتاب
-            //         int dir = getch();
-            //         int dx = 0, dy = 0;
-            //         if (dir == KEY_UP) dx = -1;
-            //         else if (dir == KEY_DOWN) dx = 1;
-            //         else if (dir == KEY_LEFT) dy = -1;
-            //         else if (dir == KEY_RIGHT) dy = 1;
+                    int x = player.x, y = player.y;
+                    int max_range = player.equipped_weapon.range; // حداکثر برد تیر
+                    for (int i = 0; i < max_range; i++) {
+                        x += dx;
+                        y += dy;
+                        if(!(y <= height && y >= 0 && x >= 0 && x <= width)){
+                            break;
+                        }
+                        if (map[y][x] == '|' || map[y][x] == '_' || map[y][x] == 'o' || map[y][x] == '+') {
+                            bool placed = false;
+                            while(x != player.x || y != player.y) {
+                                x -= dx;
+                                y -= dy;
+                                // بررسی اینکه موقعیت جدید داخل نقشه است و خالی است
+                                if (y >= 0 && y < height && x >= 0 && x < width && map[y][x] == '.') {
+                                    map[y][x] = player.equipped_weapon.symbol_on_map;
+                                    placed = true;
+                                    break;  // وقتی تیر گذاشته شد، از حلقه خارج شو
+                                }
+                            }
 
-            //         int x = player->x, y = player->y;
-            //         int max_range = 5; // حداکثر برد تیر
-            //         for (int i = 0; i < max_range; i++) {
-            //             x += dx;
-            //             y += dy;
-            //             if (is_wall(x, y)) {
-            //                 drop_projectile(x, y);
-            //                 mvprintw(1, 0, "The projectile hit the wall");
-            //                 break;
-            //             }
-            //             Enemy *enemy = get_enemy_at(x, y);
-            //             if (enemy) {
-            //                 enemy->hp -= player->equipped_weapon.damage;
-            //                 mvprintw(1, 0, "The projectile hit %s, remaining HP: %d", enemy->name, enemy->hp);
-            //                 break;
-            //             }
-            //         }
+                            mvprintw(whole_height - 2, width / 2 + 2, "The projectile hit the wall");
+                            refresh();
+                            sleep(1);
+                            break;
+                        }
+                        Monster *enemy = getMonsterAtPosition(monsters, num_monster, x, y);
+                        if (enemy) {
+                            enemy->health -= player.equipped_weapon.damage;
+                            if(enemy->health <= 0){
+                                enemy->health = 0;
+                            } 
+                            else mvprintw(whole_height - 2, width/2 + 2, "The projectile hit %s, remaining Health: %d", enemy->name, enemy->health);
+                            break;
+                        }
+                    }
 
-            //         if (player->equipped_weapon.is_consumable) {
-            //             player->equipped_weapon.numbers--;
-            //         }
+                    if (player.equipped_weapon.is_consumable) {
+                        player.equipped_weapon.numbers--;
+                    }
 
-            //         // ذخیره آخرین شلیک
-            //         last_shot.dx = dx;
-            //         last_shot.dy = dy;
-            //         last_shot.weapon_used = player->equipped_weapon;
-            //     }
-            //     break;
+                    // ذخیره آخرین شلیک
+                    last_shot.dx = dx;
+                    last_shot.dy = dy;
+                    last_shot.weapon_used = player.equipped_weapon;
+                }
+                break;
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;
@@ -1031,7 +1154,7 @@ void new_game() {
         }
     }
 
-    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods);
+    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods, monsters);
 
 
     // آزاد کردن حافظه نقشه
@@ -1162,16 +1285,11 @@ void continue_game() {
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
 
-        // دریافت ورودی از کاربر
-        int ch = getch();
-
-        // پاک کردن موقعیت قبلی بازیکن از نقشه
-        map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
+        //پیام برای جمع کردن طلا
         if(previous_cell == 'g' && g_clicked == 0){
             WINDOW *msg_win = newwin(3, 25, whole_height - 3, width/2 + 2);
             show_message(msg_win, "You collected 1 gold!");
             wrefresh(msg_win);
-            map[player.y][player.x] = '.';
             // مکث برای مشاهده پیام
             sleep(1);
         } else if(previous_cell == 'b' && g_clicked == 0){
@@ -1180,74 +1298,78 @@ void continue_game() {
             wrefresh(msg_win);
             // مکث برای مشاهده پیام
             sleep(1);
-            map[player.y][player.x] = '.';
-        } else if((previous_cell == 'M' || previous_cell == 'S' || previous_cell == 'D' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
-            map[player.y][player.x] = '.';
-        } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's') && g_clicked == 0){
-            map[player.y][player.x] = '.';
-        }        
+        }  
+        // دریافت ورودی از کاربر
+        int ch = getch();
+
+        // پاک کردن موقعیت قبلی بازیکن از نقشه
+        if(previous_cell == 'y'){
+            map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
+        }
+        else map[player.y][player.x] = '.';
+     
         g_clicked = 0;
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y > 0 && can_go(player.y-1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                    player.y--;
+                if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                    player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                    player.y++;
+                if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                    player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
                 }
                     
                 break;
             case KEY_LEFT:
-                if (player.x > 0 && can_go(player.y , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x--;
+                if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x -= player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
                 }
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x++;
+                if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x += player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x++;
-                    player.y--;
+                if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x += player.speed;
+                    player.y -= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                    player.x++;
-                    player.y++;
+                if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                    player.x += player.speed;
+                    player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_HOME:
-                if (player.y > 0 && player.x > 0 && (map[player.y - 1][player.x - 1] == '.' || map[player.y - 1][player.x - 1] == '#' || map[player.y - 1][player.x - 1] == '+')){
-                    player.x--;
-                    player.y--;
+                if (player.y >= player.speed && player.x >= player.speed && (map[player.y - player.speed][player.x - player.speed] == '.' || map[player.y - player.speed][player.x - player.speed] == '#' || map[player.y - player.speed][player.x - player.speed] == '+')){
+                    player.x -= player.speed;
+                    player.y -= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                 break;
             case KEY_END:
-                if (player.y < height - 1 && player.x > 0 && (map[player.y + 1][player.x - 1] == '.' || map[player.y + 1][player.x - 1] == '#' || map[player.y + 1][player.x - 1] == '+')){
-                    player.x--;
-                    player.y++;
+                if (player.y < height - player.speed && player.x >= player.speed && (map[player.y + player.speed][player.x - player.speed] == '.' || map[player.y + player.speed][player.x - player.speed] == '#' || map[player.y + player.speed][player.x - player.speed] == '+')){
+                    player.x -= player.speed;
+                    player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
                 }
@@ -1270,64 +1392,64 @@ void continue_game() {
                 int ch2 = getch();
                 switch (ch2) {
                     case KEY_UP:
-                        if (player.y > 0 && can_go(player.y-1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                            player.y--;
+                        if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                            player.y -= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
                             
                         break;
                     case KEY_DOWN:
-                        if (player.y < height - 1 && can_go(player.y + 1 , player.x, map, &player, &map_visited, g_clicked, foods)){
-                            player.y++;
+                        if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                            player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
                         }
                             
                         break;
                     case KEY_LEFT:
-                        if (player.x > 0 && can_go(player.y , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x--;
+                        if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x -= player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '-';
                         }
                         
                         break;
                     case KEY_RIGHT:
-                        if (player.x < width - 1 && can_go(player.y , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x++;
+                        if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x += player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '+';
                         }
                         break;
                     case KEY_PPAGE:
-                        if (player.y > 0 && player.x < width - 1 && can_go(player.y-1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x++;
-                            player.y--;
+                        if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x += player.speed;
+                            player.y -= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
                         break;
                     case KEY_NPAGE:
-                        if (player.y < height - 1 && player.x < width - 1 && can_go(player.y + 1 , player.x + 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x++;
-                            player.y++;
+                        if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x += player.speed;
+                            player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
                         }
                         break;
                     case KEY_HOME:
-                        if (player.y > 0 && player.x > 0 && can_go(player.y-1 , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x--;
-                            player.y--;
+                        if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x -= player.speed;
+                            player.y -= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
                         break;
                     case KEY_END:
-                        if (player.y < height - 1 && player.x > 0 && can_go(player.y + 1 , player.x - 1, map, &player, &map_visited, g_clicked, foods)){
-                            player.x--;
-                            player.y++;
+                        if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                            player.x -= player.speed;
+                            player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
                         }

@@ -9,7 +9,20 @@ typedef struct {
     int type;       // نوع غذا (۱: معمولی، ۲: اعلا، ۳: جادویی، ۴: فاسد)
     char name[20]; // نام غذا (مثلاً "نان")
     int restore_hunger;
+    int restore_health;
 } Food;
+
+typedef struct {
+    char symbol;
+    char *name;
+    int health;
+    int damage;
+    int x, y;          // موقعیت فعلی هیولا
+    int type;          // نوع هیولا برای تعیین رفتار
+    int stepsTaken;    // تعداد قدم‌های برداشته‌شده
+    bool active;       // آیا هیولا هنوز قهرمان را دنبال می‌کند؟
+} Monster;
+
 
 // تعریف انواع سلاح
 typedef enum {
@@ -26,8 +39,15 @@ typedef struct {
     char name[20];
     char symbol[5];  // برای نگه‌داری کاراکترهای Unicode
     int damage;
-    int weight;
+    int is_melee;
+    int numbers;
+    int is_consumable;
 } Weapon;
+
+typedef struct {
+    int dx, dy; // جهت حرکت
+    Weapon weapon_used; // سلاح استفاده شده
+} LastShot;
 
 typedef enum {
     HEALTH,
@@ -54,6 +74,7 @@ typedef struct{
     int points;
     int lives;
     int health;
+    int health_increaser;
     int hunger; // سطح گرسنگی
     Food inventory[5];
     int food_count;
@@ -73,6 +94,8 @@ typedef struct {
     int floor; //طبقه ی اتاق
     char theme;
 } Room;
+
+
 
 void display_leaderboard();
 int compare_users_by_points();

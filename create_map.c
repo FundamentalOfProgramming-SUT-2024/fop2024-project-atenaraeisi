@@ -11,6 +11,31 @@
 bool is_valid_position(char **map, int x, int y) {
     return map[y][x] == '.';
 }
+Monster createMonster(int type) {
+    Monster m;
+    switch (type) {
+        case 0:
+            m = (Monster){'D', "Demon", 5, 2, 0, 0, 3, 0, true};
+            break;
+        case 1:
+            m = (Monster){'F', "Fire Breathing Monster", 10, 4, 0, 0, 3, 0, true};
+            break;
+        case 2:
+            m = (Monster){'G', "Giant", 15, 7, 0, 0, 2, 0, true};
+            break;
+        case 3:
+            m = (Monster){'S', "Snake", 3, 1, 0, 0, 1, 0, true};
+            break;
+        case 4:
+            m = (Monster){'U', "Undead", 30, 5, 0, 0, 4, 0, true};
+            break;
+        default:
+            m = (Monster){'?', "Unknown", 1, 1, 0, 0, 3, 0, false}; // Unknown monsters are inactive
+            break;
+    }
+    return m;
+}
+
 
 void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
     int x = x1;
@@ -57,7 +82,7 @@ void connect_rooms(char **map, int x1, int y1, int x2, int y2) {
 
 }
 
-char **create_map(int width, int height, int level_difficulty, Player* player, Room *rooms, int num_rooms, Food foods[7]) {
+char **create_map(int width, int height, int level_difficulty, Player* player, Room *rooms, int num_rooms, Food foods[7], int num_monster, Monster monsters[]) {
     // تخصیص حافظه برای نقشه
     char **map = (char **)malloc(height * sizeof(char *));
     for (int i = 0; i < height; i++) {
@@ -310,8 +335,8 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
                 weapon_x = rooms[i].start_x + rand() % (rooms[i].width);
                 weapon_y = rooms[i].start_y + rand() % (rooms[i].height);
             }
-            int type_num = rand() % 5;
-            char type[] = {'M', 'D', 'W', 'N', 'S'};
+            int type_num = rand() % 4;
+            char type[] = {'e', 'W', 'N', 'l'};
             map[weapon_y][weapon_x] = type[type_num];
         }
         //گذاشتن پله
@@ -347,16 +372,55 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             food_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
             food_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
         }
+        int random_type = 1 + rand() % 4;
         foods[i].x = food_x;
         foods[i].y = food_y;
-        foods[i].type = 1; // نوع معمولی
-        strcpy(foods[i].name, "normal food");
-        foods[i].restore_hunger = 10;
+        
+        foods[i].type = random_type;
+        switch (random_type){
+            case 1:
+                strcpy(foods[i].name, "normal food");
+                foods[i].restore_hunger = 10;
+                foods[i].restore_health = 3;
+                break;
+            case 2:
+                strcpy(foods[i].name, "high quality food");
+                foods[i].restore_hunger = 20;
+                foods[i].restore_health = 5;
+                break;
+            case 3:
+                strcpy(foods[i].name, "magic food");
+                foods[i].restore_hunger = 10;
+                foods[i].restore_health = 10;
+                break;
+            case 4:
+                strcpy(foods[i].name, "normal food");
+                foods[i].restore_hunger = 0;
+                foods[i].restore_health = -3;
+                break;
+
+        }
         map[food_y][food_x] = 'f';
     }
 
-
-
+    
+    //گذاشتن هیولا
+    for(int i = 0; i < num_monster; i++){
+        int room_index = rand() % num_rooms;
+        int monster_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
+        int monster_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
+        while(map[monster_y][monster_x] != '.' || rooms[room_index].theme == 'n'){
+            room_index = rand() % num_rooms;
+            monster_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
+            monster_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
+        }
+        int type_num = rand() % 5;
+        char type[] = {'D', 'F', 'G', 'S', 'U'};
+        monsters[i] = createMonster(type_num); // نوع معمولی
+        monsters[i].x = monster_x;
+        monsters[i].y = monster_y;
+        map[monster_y][monster_x] = type[type_num];
+    }
 
 
     return map;
@@ -429,7 +493,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        }else if(map[y][x] == 'b'){
+                        } else if(map[y][x] == 'b'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(162));
                                 mvprintw(y, x, "\u26c0");
@@ -602,7 +666,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } else if(map[y][x] == 'D'){
+                        } else if(map[y][x] == 'e'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(133));
                                 mvprintw(y, x, "\u2020");
@@ -629,7 +693,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } else if(map[y][x] == 'S'){
+                        } else if(map[y][x] == 'l'){
                             if(map_visited[y][x] == 0){
                                 attron(COLOR_PAIR(143));
                                 mvprintw(y, x, "\u2694");
@@ -665,7 +729,11 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } else if(map_visited[y][x] == 1){
                                 mvprintw(y, x, ".");
                             }
-                        } 
+                        } else if(map[y][x] == 'D'|| map[y][x] == 'F'|| map[y][x] == 'G'|| map[y][x] == 'S'|| map[y][x] == 'U'){
+                            mvprintw(y, x, "%c", map[y][x]);
+                        } else{
+                            mvprintw(y, x, "%c", map[y][x]);
+                        }
                     }
                 }
                 attroff(COLOR_PAIR(room_color));
@@ -880,7 +948,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                             mvprintw(y, x, ".");
                         }
                         break;
-                    case 'D':
+                    case 'e':
                         if(map_visited[y][x] == 0){
                             attron(COLOR_PAIR(133));
                             mvprintw(y, x, "\u2020");
@@ -910,7 +978,7 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                             mvprintw(y, x, ".");
                         }
                         break;
-                    case 'S':
+                    case 'l':
                         if(map_visited[y][x] == 0){
                             attron(COLOR_PAIR(143));
                             mvprintw(y, x, "\u2694");
@@ -949,6 +1017,9 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         } else if(map_visited[y][x] == 1){
                             mvprintw(y, x, ".");
                         }
+                        break;
+                    default:
+                        mvprintw(y, x, "%c", map[y][x]);
                         break;
                 }
             }

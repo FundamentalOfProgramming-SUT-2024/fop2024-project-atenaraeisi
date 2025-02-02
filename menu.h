@@ -12,6 +12,7 @@ typedef struct user{
 }user;
 
 extern user *user1; 
+extern int have_account;
 extern int level_difficulty;
 extern char hero_color;
 

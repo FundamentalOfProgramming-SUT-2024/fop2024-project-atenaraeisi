@@ -10,6 +10,7 @@
 #include "game.h"
 
 user *user1 = NULL;
+int have_account = 0;
 
 // تابع برای افزودن یک کاربر جدید به فایل
 void save_user(user *new_user) {
@@ -31,6 +32,7 @@ void creat_account(int rows, int cols){
     refresh();
 
     user1 = (user *) malloc(sizeof(user));
+    have_account = 1;
 
     move(4,4);
     printw("Enter your username: ");
@@ -111,11 +113,6 @@ void creat_account(int rows, int cols){
         getstr(user1->email);
     }
     user1->rank = 0;
-    user1->points = strlen(user1->UserName) * 100;
-    user1->golds = rand() % strlen(user1->email) + 23;
-    user1->times_played = user1->points / 50;
-
-    save_user(user1);
     
     FILE* users_info = fopen("users_info.txt", "a");
 
@@ -140,6 +137,7 @@ void log_in(int rows, int cols){
     refresh();
 
     user1 = (user *) malloc(sizeof(user));
+    have_account = 1;
     char info_of_1_user[1024];
 
     move(4,4);

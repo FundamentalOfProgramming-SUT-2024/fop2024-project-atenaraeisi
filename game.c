@@ -155,6 +155,43 @@ void talisman_menu(Player *player, WINDOW *menu_win) {
     player->talisman_count--;  
 
 }
+bool all_monsters_defeated(Monster *monsters, int num_monsters) {
+    for (int i = 0; i < num_monsters; i++) {
+        if (monsters[i].health > 0) {
+            return false;  // هنوز دشمنی زنده است.
+        }
+    }
+    return true;  // همه دشمنان شکست خورده‌اند.
+}
+void display_victory_message(int score) {
+    int width, height;
+    getmaxyx(stdscr, height, width);
+    clear();  // Clear the screen
+    attron(A_BOLD);  // Make the text bold
+    mvprintw(5, (width-12)/2, "🎉 Victory! 🎉");
+    attroff(A_BOLD);
+    mvprintw(7, (width-55)/2, "Congratulations! You have defeated all the enemies! 🏆");
+    mvprintw(9, (width-25)/2, "Your final score: %d ⭐", score);
+    mvprintw(11, (width-50)/2, "Press any key to return to the main menu... 🔙");
+    refresh();
+    
+    getch();  // Wait for the player to press a key
+}
+void display_game_over_message(int score) {
+    int width, height;
+    getmaxyx(stdscr, height, width);
+    clear();  // پاک کردن صفحه
+    attron(A_BOLD);  // برجسته کردن متن
+    mvprintw(5, (width-15)/2, "💀 Game Over 💀");
+    attroff(A_BOLD);
+    mvprintw(7, (width-50)/2, "You fought bravely, but the enemies were too strong... ⚔️");
+    mvprintw(9, (width-25)/2, "Your final score: %d 💔", score);
+    mvprintw(11, (width-45)/2, "Press any key to try again or return to the menu 🔄");
+    refresh();
+    
+    getch();  // صبر برای فشردن کلید توسط بازیکن
+}
+
 
 // تابعی برای ایجاد یک سلاح جدید
 Weapon createWeapon(WeaponType type) {
@@ -414,7 +451,7 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
         *map_visited[y][x] == 1;
         return 1;
     } else if(map[y][x] == 'y'){
-        player->lives--;
+        player->health -= 10;
         return 1;
     } else if(map[y][x] == 'g' && g_clicked == 0){
         player->collected_golds++;
@@ -620,6 +657,8 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 return 0;
             }
         } else return 0;
+    } else if(map[y][x] == '*'){
+        return 1;
     }
     else return 0;
 }
@@ -670,8 +709,9 @@ void move_fast(char **map, int width, int height, Player *player, int **map_visi
         }
     }
 }
-
+int finished = 0;
 void new_game() {
+    finished = 0;
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
     int width, height;
@@ -682,7 +722,7 @@ void new_game() {
     player.color = hero_color;
     player.is_in_floor = 1;
     player.collected_golds = 0;
-    player.points = 0;
+    player.score = 0;
     player.lives = 5;
     player.health = 100;
     player.health_increaser = 0;
@@ -701,7 +741,6 @@ void new_game() {
     player.speed = 1;
     player.health_speed = 1;
     player.power = 1;
-    int talisman_lifetime = 0;
     
     // پنجره منوی غذا
     WINDOW *menu_win = newwin(20, 45, 0, 0);
@@ -716,8 +755,8 @@ void new_game() {
     }
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     Food foods[7];
-    int num_monster = 1 + rand() % 6;
-    Monster monsters[num_monster];
+    int num_monster = 6;
+    Monster monsters[6];
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, &player, rooms, num_rooms, foods, num_monster, monsters);
 
@@ -748,6 +787,10 @@ void new_game() {
 
     // حلقه اصلی بازی
     while (game_running) {
+        player.lives = player.health/20;
+        if(player.health > 0 && player.health < 20){
+            player.lives = 1;
+        }
         //مدیریت زمان اثر طلسم
         if(player.current_talisman.active){
             player.current_talisman.lifetime++;
@@ -795,27 +838,32 @@ void new_game() {
         int countMonster = 0;
         Room current = rooms[current_room];
 
-        if(player.is_in_floor > 4){
-            WINDOW *msg_win = newwin(10, 50, height/2, (width - 50)/2);
-            wclear(msg_win); // پاک کردن محتوای قبلی پنجره
-            box(msg_win, 0, 0); // افزودن کادر دور پنجره
-            mvwprintw(msg_win, 1, 21, "You win!"); // نوشتن پیام جدید
-            mvwprintw(msg_win, 3, 12, "You collected %d golds.",player.collected_golds); // نوشتن پیام جدید
-            mvwprintw(msg_win, 5, 12, "Your point is %d.", player.points); // نوشتن پیام جدید
-            wrefresh(msg_win); // به‌روزرسانی پنجره
-            sleep(5);
-            break;
-        }
+        // if(player.is_in_floor > 4){
+        //     WINDOW *msg_win = newwin(10, 50, height/2, (width - 50)/2);
+        //     wclear(msg_win); // پاک کردن محتوای قبلی پنجره
+        //     box(msg_win, 0, 0); // افزودن کادر دور پنجره
+        //     mvwprintw(msg_win, 1, 21, "You win!"); // نوشتن پیام جدید
+        //     mvwprintw(msg_win, 3, 12, "You collected %d golds.",player.collected_golds); // نوشتن پیام جدید
+        //     mvwprintw(msg_win, 5, 12, "Your Score is %d.", player.score); // نوشتن پیام جدید
+        //     wrefresh(msg_win); // به‌روزرسانی پنجره
+        //     sleep(5);
+        //     break;
+        // }
 
         // بررسی پایان بازی
         if (player.health <= 0) {
-            WINDOW *msg_win = newwin(3, 35, height/2, (width - 35)/2);
-            show_message(msg_win, "Game Over! You starved to death.");
-            wrefresh(msg_win);
-            // مکث برای مشاهده پیام
-            sleep(2);
+            display_game_over_message(player.score);
+            finished = 1;
             break;
         }
+        if (player.is_in_floor == 4 && all_monsters_defeated(monsters, num_monster) && rooms[current_room].theme == 't') {
+            player.score += player.health;
+            display_victory_message(player.score);
+            finished = 1;
+            // بازگشت به منوی اصلی یا پایان بازی
+            break;  // حلقه بازی را متوقف کن
+        }
+
 
         // ذخیره وضعیت خانه قبلی
         char previous_cell = map[player.y][player.x];
@@ -838,6 +886,7 @@ void new_game() {
                     map[monsters[i].y][monsters[i].x] = '.';
                     monsters[i].active = false;
                     mvprintw(whole_height - 2, width/2 + 2, "You killed the enemy  %s", monsters[i].name);
+                    player.score += 100;
                     refresh();
                     usleep(1500000);
                 } else{
@@ -864,7 +913,7 @@ void new_game() {
         mvprintw(whole_height - 4, 5, "Lives: %d", player.lives);
         mvprintw(whole_height - 3, 5, "Floor: %d", player.is_in_floor);
         mvprintw(whole_height - 2, 5, "Golds: %d", player.collected_golds);
-        mvprintw(whole_height - 1, 5, "Points: %d", player.points);
+        mvprintw(whole_height - 1, 5, "Score: %d", player.score);
         //mvprintw(whole_height - 4, width/6, "Health: %d%%", player.health);
         display_health_bar_ncurses(player.health, 100, whole_height - 4 , width/6);
         // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
@@ -884,15 +933,37 @@ void new_game() {
             show_message(msg_win, "You collected 1 gold!");
             wrefresh(msg_win);
             map[player.y][player.x] = '.';
+            player.score += 10;
             // مکث برای مشاهده پیام
             sleep(1);
         } else if(previous_cell == 'b' && g_clicked == 0){
             WINDOW *msg_win = newwin(3, 30, whole_height - 3, width/2 + 2);
             show_message(msg_win, "You collected 1 black gold!");
             wrefresh(msg_win);
+            player.score += 20;
             // مکث برای مشاهده پیام
             sleep(1);
             map[player.y][player.x] = '.';
+        } else if(previous_cell == '*' && g_clicked == 0){
+            WINDOW *msg_win = newwin(3, 30, whole_height - 3, width/2 + 2);
+            show_message(msg_win, "You found the treasure!");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(1);
+            map[player.y][player.x] = '.';
+            int index_treasure = 0;
+            for (int r = 0; r < num_rooms; r++) {
+                if (rooms[r].theme == 't') {
+                    index_treasure = r;
+                    break;
+                }
+            }
+            player.x = rooms[index_treasure].start_x + rooms[index_treasure].width / 2 ;
+            player.y = rooms[index_treasure].start_y + rooms[index_treasure].height  -1 - rand() % 5;
+            while (!is_valid_position(map, player.x, player.y)){ // پیدا کردن موقعیت خالی
+                player.y = rooms[index_treasure].start_y + rooms[index_treasure].height  -1 - rand() % 5;
+            }
+                    
         } else if((previous_cell == 'M' || previous_cell == 'l' || previous_cell == 'e' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
             map[player.y][player.x] = '.';
         } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's' || previous_cell == 'f') && g_clicked == 0){
@@ -1154,7 +1225,14 @@ void new_game() {
         }
     }
 
-    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods, monsters);
+    if(have_account){
+        user1->points = player.score;
+        user1->golds = player.collected_golds;
+        user1->times_played++;
+        save_user(user1);
+    }
+
+   save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods);
 
 
     // آزاد کردن حافظه نقشه
@@ -1162,23 +1240,27 @@ void new_game() {
         free(map[i]);
     }
     free(map);
+    free(rooms);
 }
 
 void continue_game() {
+    if(finished){
+        return;
+    }
     // تعریف متغیرها برای نقشه بازی
     setlocale(LC_ALL, "");
     int width, height, num_rooms;    
     getmaxyx(stdscr, height, width);
     int whole_height = height;
     height -= 5;
-
     char **map;
     int **map_visited;
     Room *rooms;
     Player player;
     Food foods[7];
-    int num_monster = 1 + rand() % 6;
-    Monster monsters[num_monster];
+    int num_monster;
+    Monster *monsters;
+    talisman current_talisman = {0};
 
     // بارگذاری اطلاعات بازی
     load_game_from_binary_file(&map, &height, &width, &rooms, &num_rooms, &player, &map_visited, &foods);
@@ -1188,16 +1270,46 @@ void continue_game() {
 
     int display_completely = 0;
     // متغیر برای وضعیت بازی
+    LastShot last_shot = {0};
     bool game_running = true;
     int g_clicked = 0;
-    WINDOW *menu_win = newwin(20, 45, 0, 0);
     time_t last_update = time(NULL);  
+    WINDOW *menu_win = newwin(20, 45, 0, 0);
+    
     // حلقه اصلی بازی
     while (game_running) {
-        player.health_increaser++;
+        player.lives = player.health/20;
+        if(player.health > 0 && player.health < 20){
+            player.lives = 1;
+        }
+        //مدیریت زمان اثر طلسم
+        if(player.current_talisman.active){
+            player.current_talisman.lifetime++;
+                if(player.current_talisman.lifetime >= 10){
+                    switch (player.current_talisman.type) {
+                    case HEALTH:
+                        player.health_speed = 1;
+                        break;
+                    case SPEED:
+                        player.speed = 1;
+                        break;
+                    case DAMAGE:
+                        player.power = 1;
+                        break;
+                    }
+                    player.current_talisman = current_talisman;
+                }
+        }
+        player.health_increaser += player.health_speed;
         if(player.health_increaser >= 30 && player.health < 100 && player.hunger == 100){
             player.health++;
             player.health_increaser = 0;
+        }
+        if(player.health >= 100){
+            player.health = 100;
+        } 
+        if(player.hunger >= 100){
+            player.hunger = 100;
         }
         // بررسی زمان برای کاهش گرسنگی
         if (difftime(time(NULL), last_update) >= HUNGER_DECREASE_INTERVAL) {
@@ -1223,11 +1335,12 @@ void continue_game() {
             box(msg_win, 0, 0); // افزودن کادر دور پنجره
             mvwprintw(msg_win, 1, 21, "You win!"); // نوشتن پیام جدید
             mvwprintw(msg_win, 3, 12, "You collected %d golds.",player.collected_golds); // نوشتن پیام جدید
-            mvwprintw(msg_win, 5, 12, "Your point is %d.", player.points); // نوشتن پیام جدید
+            mvwprintw(msg_win, 5, 12, "Your Score is %d.", player.score); // نوشتن پیام جدید
             wrefresh(msg_win); // به‌روزرسانی پنجره
             sleep(5);
             break;
         }
+
         // بررسی پایان بازی
         if (player.health <= 0) {
             WINDOW *msg_win = newwin(3, 35, height/2, (width - 35)/2);
@@ -1237,6 +1350,15 @@ void continue_game() {
             sleep(2);
             break;
         }
+        if (player.is_in_floor == 4 && all_monsters_defeated(monsters, num_monster) && rooms[current_room].theme == 't') {
+            player.score += player.health;
+            display_victory_message(player.score);
+
+            // بازگشت به منوی اصلی یا پایان بازی
+            break;  // حلقه بازی را متوقف کن
+        }
+
+
         // ذخیره وضعیت خانه قبلی
         char previous_cell = map[player.y][player.x];
         if(!g_clicked){
@@ -1249,13 +1371,23 @@ void continue_game() {
         }
         // رسم بازیکن روی نقشه
         map[player.y][player.x] = '@';
-        
+
+        //حرکت دادن هیولاهای توی اتاق
         for (int i = 0; i < num_monster; i++) {
             if (monsters[i].x > current.start_x && monsters[i].x < current.start_x + current.width &&
-                monsters[i].y > current.start_y && monsters[i].y < current.start_y + current.height) {
-                map[monsters[i].y][monsters[i].x] = '.';
-                moveMonster(&monsters[i], player , map);
-                map[monsters[i].y][monsters[i].x] = monsters[i].symbol;
+                monsters[i].y > current.start_y && monsters[i].y < current.start_y + current.height && monsters[i].active == true) {
+                if(monsters[i].health == 0){
+                    map[monsters[i].y][monsters[i].x] = '.';
+                    monsters[i].active = false;
+                    mvprintw(whole_height - 2, width/2 + 2, "You killed the enemy  %s", monsters[i].name);
+                    player.score += 100;
+                    refresh();
+                    usleep(1500000);
+                } else{
+                    map[monsters[i].y][monsters[i].x] = '.';
+                    moveMonster(&monsters[i], player , map);
+                    map[monsters[i].y][monsters[i].x] = monsters[i].symbol;
+                }
             }
         }
         // نمایش نقشه
@@ -1275,39 +1407,62 @@ void continue_game() {
         mvprintw(whole_height - 4, 5, "Lives: %d", player.lives);
         mvprintw(whole_height - 3, 5, "Floor: %d", player.is_in_floor);
         mvprintw(whole_height - 2, 5, "Golds: %d", player.collected_golds);
-        mvprintw(whole_height - 1, 5, "Points: %d", player.points);
+        mvprintw(whole_height - 1, 5, "Score: %d", player.score);
         //mvprintw(whole_height - 4, width/6, "Health: %d%%", player.health);
         display_health_bar_ncurses(player.health, 100, whole_height - 4 , width/6);
         // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
         display_hunger_bar_ncurses(player.hunger, 100, whole_height - 3 , width/6);
-        display_weapons(player, whole_height, width);         
+        display_weapons(player, whole_height, width);
+        mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  %s", player.equipped_weapon.name, player.equipped_weapon.symbol);         
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
+        // دریافت ورودی از کاربر
+        int ch = getch();
 
-        //پیام برای جمع کردن طلا
+        // پاک کردن موقعیت قبلی بازیکن از نقشه
+        map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
         if(previous_cell == 'g' && g_clicked == 0){
             WINDOW *msg_win = newwin(3, 25, whole_height - 3, width/2 + 2);
             show_message(msg_win, "You collected 1 gold!");
             wrefresh(msg_win);
+            map[player.y][player.x] = '.';
+            player.score += 10;
             // مکث برای مشاهده پیام
             sleep(1);
         } else if(previous_cell == 'b' && g_clicked == 0){
             WINDOW *msg_win = newwin(3, 30, whole_height - 3, width/2 + 2);
             show_message(msg_win, "You collected 1 black gold!");
             wrefresh(msg_win);
+            player.score += 20;
             // مکث برای مشاهده پیام
             sleep(1);
-        }  
-        // دریافت ورودی از کاربر
-        int ch = getch();
-
-        // پاک کردن موقعیت قبلی بازیکن از نقشه
-        if(previous_cell == 'y'){
-            map[player.y][player.x] = previous_cell; // بازگرداندن خانه قبلی به وضعیت قبلی
+            map[player.y][player.x] = '.';
+        } else if(previous_cell == '*' && g_clicked == 0){
+            WINDOW *msg_win = newwin(3, 30, whole_height - 3, width/2 + 2);
+            show_message(msg_win, "You found the treasure!");
+            wrefresh(msg_win);
+            // مکث برای مشاهده پیام
+            sleep(1);
+            map[player.y][player.x] = '.';
+            int index_treasure = 0;
+            for (int r = 0; r < num_rooms; r++) {
+                if (rooms[r].theme == 't') {
+                    index_treasure = r;
+                    break;
+                }
+            }
+            player.x = rooms[index_treasure].start_x + rooms[index_treasure].width / 2 ;
+            player.y = rooms[index_treasure].start_y + rooms[index_treasure].height  -1 - rand() % 5;
+            while (!is_valid_position(map, player.x, player.y)){ // پیدا کردن موقعیت خالی
+                player.y = rooms[index_treasure].start_y + rooms[index_treasure].height  -1 - rand() % 5;
+            }
+                    
+        } else if((previous_cell == 'M' || previous_cell == 'l' || previous_cell == 'e' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
+            map[player.y][player.x] = '.';
+        } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's' || previous_cell == 'f') && g_clicked == 0){
+            map[player.y][player.x] = '.';
         }
-        else map[player.y][player.x] = '.';
-     
         g_clicked = 0;
         // مدیریت ورودی‌ها
         switch (ch) {
@@ -1345,7 +1500,7 @@ void continue_game() {
             case KEY_PPAGE:
                 if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
                     player.x += player.speed;
-                    player.y -= player.speed;
+                    player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
@@ -1359,15 +1514,15 @@ void continue_game() {
                 }
                 break;
             case KEY_HOME:
-                if (player.y >= player.speed && player.x >= player.speed && (map[player.y - player.speed][player.x - player.speed] == '.' || map[player.y - player.speed][player.x - player.speed] == '#' || map[player.y - player.speed][player.x - player.speed] == '+')){
+                if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
                     player.x -= player.speed;
-                    player.y -= player.speed;
+                    player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
                 }
                 break;
             case KEY_END:
-                if (player.y < height - player.speed && player.x >= player.speed && (map[player.y + player.speed][player.x - player.speed] == '.' || map[player.y + player.speed][player.x - player.speed] == '#' || map[player.y + player.speed][player.x - player.speed] == '+')){
+                if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
                     player.x -= player.speed;
                     player.y += player.speed;
                     player.direction[0] = 'y';
@@ -1393,7 +1548,7 @@ void continue_game() {
                 switch (ch2) {
                     case KEY_UP:
                         if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
-                            player.y -= player.speed;
+                            player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
@@ -1425,7 +1580,7 @@ void continue_game() {
                     case KEY_PPAGE:
                         if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
                             player.x += player.speed;
-                            player.y -= player.speed;
+                            player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
@@ -1441,7 +1596,7 @@ void continue_game() {
                     case KEY_HOME:
                         if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
                             player.x -= player.speed;
-                            player.y -= player.speed;
+                            player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
                         }
@@ -1474,7 +1629,87 @@ void continue_game() {
                 box(menu_win, 0, 0);
                 talisman_menu(&player, menu_win);
                 break;
-            
+            case ' ':
+                if (player.equipped_weapon.numbers <= 0 && player.equipped_weapon.is_consumable) {
+                    mvprintw(whole_height - 2, width/2 + 2, "Your weapon is over!");
+                    refresh();
+                    sleep(1);
+                    break;
+                }
+                if (player.equipped_weapon.is_melee) { 
+                    // ضربه به ۸ جهت
+                    int dirs[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, 
+                                    {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+                    for (int i = 0; i < 8; i++) {
+                        int new_x = player.x + dirs[i][0];
+                        int new_y = player.y + dirs[i][1];
+                        Monster *enemy = getMonsterAtPosition(monsters, num_monster, new_x, new_y);
+                        if (enemy) {
+                            enemy->health -= player.equipped_weapon.damage;
+                            if(enemy->health <= 0){
+                                enemy->health = 0;
+                            }
+                            else mvprintw(whole_height - 2, width/2 + 2, "You hit %s, remaining health: %d", enemy->name, enemy->health);
+                            refresh();
+                            sleep(1);
+                        }
+                    }
+                } else {
+                    // دریافت جهت پرتاب
+                    int dir = getch();
+                    int dx = 0, dy = 0;
+                    if (dir == KEY_UP) dy = -1;
+                    else if (dir == KEY_DOWN) dy = 1;
+                    else if (dir == KEY_LEFT) dx = -1;
+                    else if (dir == KEY_RIGHT) dx = 1;
+
+                    int x = player.x, y = player.y;
+                    int max_range = player.equipped_weapon.range; // حداکثر برد تیر
+                    for (int i = 0; i < max_range; i++) {
+                        x += dx;
+                        y += dy;
+                        if(!(y <= height && y >= 0 && x >= 0 && x <= width)){
+                            break;
+                        }
+                        if (map[y][x] == '|' || map[y][x] == '_' || map[y][x] == 'o' || map[y][x] == '+') {
+                            bool placed = false;
+                            while(x != player.x || y != player.y) {
+                                x -= dx;
+                                y -= dy;
+                                // بررسی اینکه موقعیت جدید داخل نقشه است و خالی است
+                                if (y >= 0 && y < height && x >= 0 && x < width && map[y][x] == '.') {
+                                    map[y][x] = player.equipped_weapon.symbol_on_map;
+                                    placed = true;
+                                    break;  // وقتی تیر گذاشته شد، از حلقه خارج شو
+                                }
+                            }
+
+                            mvprintw(whole_height - 2, width / 2 + 2, "The projectile hit the wall");
+                            refresh();
+                            sleep(1);
+                            break;
+                        }
+                        Monster *enemy = getMonsterAtPosition(monsters, num_monster, x, y);
+                        if (enemy) {
+                            enemy->health -= player.equipped_weapon.damage;
+                            if(enemy->health <= 0){
+                                enemy->health = 0;
+                            } 
+                            else mvprintw(whole_height - 2, width/2 + 2, "The projectile hit %s, remaining Health: %d", enemy->name, enemy->health);
+                            break;
+                        }
+                    }
+
+                    if (player.equipped_weapon.is_consumable) {
+                        player.equipped_weapon.numbers--;
+                    }
+
+                    // ذخیره آخرین شلیک
+                    last_shot.dx = dx;
+                    last_shot.dy = dy;
+                    last_shot.weapon_used = player.equipped_weapon;
+                }
+                break;
             case 'q': // خروج از بازی
                 game_running = false; // پایان حلقه
                 break;

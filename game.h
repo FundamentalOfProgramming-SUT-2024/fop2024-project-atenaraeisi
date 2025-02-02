@@ -73,7 +73,7 @@ typedef struct{
     char direction[2];
     int is_in_floor;
     int collected_golds;
-    int points;
+    int score;
     int lives;
     int health;
     int health_increaser;

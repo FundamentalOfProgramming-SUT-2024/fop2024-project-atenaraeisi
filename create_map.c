@@ -11,7 +11,7 @@
 bool is_valid_position(char **map, int x, int y) {
     return map[y][x] == '.';
 }
-
+Monster createMonster(int type) {
     Monster m;
     switch (type) {
         case 0:

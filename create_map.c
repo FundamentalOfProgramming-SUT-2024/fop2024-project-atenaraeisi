@@ -763,10 +763,10 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
             }
         }
 
-        //نمایش 5 واحد جلوتر در راهرو
+        //نمایش 2 واحد جلوتر در راهرو
         if(map[player.y +1][player.x] == '#' || map[player.y][player.x - 1 ] == '#' || map[player.y][player.x + 1] == '#' || map[player.y -1][player.x] == '#'){
             if(player.direction[0] == 'x'){
-                for(int a = 0; a < 5; a++){
+                for(int a = 0; a < 3; a++){
                     if(player.direction[1] == '+'){
                         if(player.x + a > 0 && player.x + a < width){
                             if(map[player.y][player.x + a] == '#'){
@@ -774,19 +774,19 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             } 
                         }
                     }
-                else if(player.direction[1] == '-'){
-                        if(player.x - a > 0 && player.x - a < width){
-                            if(map[player.y][player.x - a] == '#'){
-                                mvprintw(player.y, player.x - a, "#");
-                            } 
-                        }
-                }
+                    else if(player.direction[1] == '-'){
+                            if(player.x - a > 0 && player.x - a < width){
+                                if(map[player.y][player.x - a] == '#'){
+                                    mvprintw(player.y, player.x - a, "#");
+                                } 
+                            }
+                    }
                         
                 }
             }
             else if(player.direction[0] == 'y'){     
                 if(player.direction[1] == '+'){
-                    for(int b = 0; b < 5; b++){
+                    for(int b = 0; b < 3; b++){
                         if(player.y + b < height && player.y + b > 0){
                             if(map[player.y + b][player.x] == '#'){
                                 mvprintw(player.y + b, player.x, "#");
@@ -796,7 +796,7 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                     }
                 }
                 else if(player.direction[1] == '-'){
-                    for(int b = 0; b < 5; b++){
+                    for(int b = 0; b < 3; b++){
                         if(player.y - b < height && player.y - b > 0){
                             if(map[player.y - b][player.x] == '#'){
                                 mvprintw(player.y - b, player.x, "#");

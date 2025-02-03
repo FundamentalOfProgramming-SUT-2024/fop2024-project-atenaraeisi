@@ -24,7 +24,6 @@ int compare_users_by_points(const void *a, const void *b) {
     }
 }
 
-
 // تابع مرتب‌سازی کاربران
 void sort_users_by_points(user *users, int total_users) {
     qsort(users, total_users, sizeof(user), compare_users_by_points);
@@ -147,7 +146,7 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
             if(idx == 0 || idx == 1 || idx == 2){
                 mvprintw(4 + i, 0, " %4d | %-18s🥇 | %6d | %5d | %8d         | %4d     ",
                     idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
-                    users[idx].times_played, users[idx].times_played*3+rand()%20);
+                    users[idx].times_played, users[idx].times_played*3);
             } else{
                 mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
                         idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
@@ -181,7 +180,6 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
         else if (ch == KEY_UP && start_index > 0) start_index--;
     }
 
-    endwin();
 }
 
 void Scoreboard() { 
@@ -221,6 +219,97 @@ void Scoreboard() {
     free(users);
 }
 
-void show_profile(){
+// تعریف تابع برای نمایش پروفایل کاربر
+void show_profile() {
+    initscr();              
+    start_color();          
+    cbreak();               
+    noecho();               
+    keypad(stdscr, TRUE);   
 
+    // تعریف رنگ‌ها
+    init_pair(1, COLOR_CYAN, COLOR_BLACK);    // عنوان‌ها
+    init_pair(2, COLOR_WHITE, COLOR_BLACK);   // مقادیر
+    init_pair(3, COLOR_RED, COLOR_BLACK);     // پیام خطا
+    init_pair(4, COLOR_GREEN, COLOR_BLACK);   // امتیازات
+    init_pair(5, COLOR_YELLOW, COLOR_BLACK);  // طلاها
+    init_pair(6, COLOR_MAGENTA, COLOR_BLACK); // دفعات بازی
+
+    int row, col;
+    getmaxyx(stdscr, row, col);  
+    clear();
+    
+    if (user1 == NULL) {
+        attron(COLOR_PAIR(3) | A_BOLD);
+        mvprintw(row / 2, (col - 35) / 2, "❌ Error: No user data available!");
+        attroff(COLOR_PAIR(3) | A_BOLD);
+        
+        mvprintw(row - 2, (col - 30) / 2, "Press any key to exit...");
+        refresh();
+        getch();
+        return;
+    }
+
+    // نمایش عنوان پروفایل
+    attron(COLOR_PAIR(1) | A_BOLD | A_UNDERLINE);
+    mvprintw(2, (col - 20) / 2, "👤 User Profile");
+    attroff(COLOR_PAIR(1) | A_BOLD | A_UNDERLINE);
+
+    int start_y = 5;
+
+    // نمایش Username
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(start_y, (col - 30) / 2, "🔑 Username: ");
+    attroff(A_BOLD);
+    attron(COLOR_PAIR(2));
+    printw("%s", user1->UserName);
+    attroff(COLOR_PAIR(2));
+
+    // نمایش Email
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(start_y + 2, (col - 30) / 2, "📧 Email: ");
+    attroff(A_BOLD);
+    attron(COLOR_PAIR(2));
+    printw("%s", user1->email);
+    attroff(COLOR_PAIR(2));
+
+    // نمایش Rank
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(start_y + 4, (col - 30) / 2, "🏆 Rank: ");
+    attroff(A_BOLD);
+    attron(COLOR_PAIR(4));
+    printw("%d", user1->rank);
+    attroff(COLOR_PAIR(4));
+
+    // نمایش Points
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(start_y + 6, (col - 30) / 2, "🎯 Points: ");
+    attroff(A_BOLD);
+    attron(COLOR_PAIR(4));
+    printw("%d", user1->points);
+    attroff(COLOR_PAIR(4));
+
+    // نمایش Golds
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(start_y + 8, (col - 30) / 2, "💰 Golds: ");
+    attroff(A_BOLD);
+    attron(COLOR_PAIR(5));
+    printw("%d", user1->golds);
+    attroff(COLOR_PAIR(5));
+
+    // نمایش Times Played
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(start_y + 10, (col - 30) / 2, "🎮 Times Played: ");
+    attroff(A_BOLD);
+    attron(COLOR_PAIR(6));
+    printw("%d", user1->times_played);
+    attroff(COLOR_PAIR(6));
+
+    // نمایش دستور برای خروج
+    attron(COLOR_PAIR(1));
+    mvprintw(row - 2, (col - 30) / 2, "🔙 Press any key to exit...");
+    attroff(COLOR_PAIR(1));
+
+    refresh();  
+    getch();       
 }

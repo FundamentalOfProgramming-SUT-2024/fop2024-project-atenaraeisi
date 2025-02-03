@@ -353,7 +353,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
             map[stair_y][stair_x] = '<';
         }
 
-        if(rooms[i].theme == 'n'){
+        if(rooms[i].theme == 'e'){
             for (int y = rooms[i].start_y; y < rooms[i].start_y + rooms[i].height; y++) {
                 for (int x = rooms[i].start_x; x < rooms[i].start_x + rooms[i].width; x++) {
                     if (map[y][x] == '+') { // در اتاق
@@ -416,7 +416,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         int room_index = rand() % num_rooms;
         int monster_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
         int monster_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
-        while(map[monster_y][monster_x] != '.' || rooms[room_index].theme == 'n'){
+        while(map[monster_y][monster_x] != '.' || rooms[room_index].theme == 'n'|| rooms[room_index].theme == 'e'){
             room_index = rand() % num_rooms;
             monster_x = rooms[room_index].start_x + rand() % (rooms[room_index].width);
             monster_y = rooms[room_index].start_y + rand() % (rooms[room_index].height);
@@ -645,7 +645,46 @@ void display_map(char **map, int width, int height, Player player, Room *rooms, 
                             || (x > 1 && player.x == x - 1 && player.y == y)){
                                 mvprintw(y, x, "+");
                             }
-                            else mvprintw(y, x, " ");
+                            else {
+                                // بررسی اطراف برای پیدا کردن | یا _
+                                char new_char = ' ';  // پیش‌فرض فضای خالی
+                                
+                                // بررسی بالا
+                                if (y > 0 && map[y - 1][x] == '|') {
+                                    new_char = '|';
+                                }
+                                // بررسی پایین
+                                else if (y + 1 < height && map[y + 1][x] == '|') {
+                                    new_char = '|';
+                                }
+                                // بررسی چپ
+                                else if (x > 0 && map[y][x - 1] == '|') {
+                                    new_char = '|';
+                                }
+                                // بررسی راست
+                                else if (x + 1 < width && map[y][x + 1] == '|') {
+                                    new_char = '|';
+                                }
+
+                                // بررسی بالا برای _
+                                if (new_char == ' ' && y > 0 && map[y - 1][x] == '_') {
+                                    new_char = '_';
+                                }
+                                // بررسی پایین برای _
+                                else if (new_char == ' ' && y + 1 < height && map[y + 1][x] == '_') {
+                                    new_char = '_';
+                                }
+                                // بررسی چپ برای _
+                                else if (new_char == ' ' && x > 0 && map[y][x - 1] == '_') {
+                                    new_char = '_';
+                                }
+                                // بررسی راست برای _
+                                else if (new_char == ' ' && x + 1 < width && map[y][x + 1] == '_') {
+                                    new_char = '_';
+                                }
+
+                                mvprintw(y, x, "%c", new_char);  // چاپ کاراکتر مناسب
+                            }
                         } else if(map[y][x] == '<'){
                             attron(COLOR_PAIR(205));
                             mvprintw(y, x, "<");
@@ -927,7 +966,46 @@ void display_whole_map(char ** map, int width, int height, Player player, Room *
                         || (x > 1 && player.x == x - 1 && player.y == y)){
                             mvprintw(y, x, "+");
                         }
-                        else mvprintw(y, x, " ");
+                        else {
+                                // بررسی اطراف برای پیدا کردن | یا _
+                                char new_char = ' ';  // پیش‌فرض فضای خالی
+                                
+                                // بررسی بالا
+                                if (y > 0 && map[y - 1][x] == '|') {
+                                    new_char = '|';
+                                }
+                                // بررسی پایین
+                                else if (y + 1 < height && map[y + 1][x] == '|') {
+                                    new_char = '|';
+                                }
+                                // بررسی چپ
+                                else if (x > 0 && map[y][x - 1] == '|') {
+                                    new_char = '|';
+                                }
+                                // بررسی راست
+                                else if (x + 1 < width && map[y][x + 1] == '|') {
+                                    new_char = '|';
+                                }
+
+                                // بررسی بالا برای _
+                                if (new_char == ' ' && y > 0 && map[y - 1][x] == '_') {
+                                    new_char = '_';
+                                }
+                                // بررسی پایین برای _
+                                else if (new_char == ' ' && y + 1 < height && map[y + 1][x] == '_') {
+                                    new_char = '_';
+                                }
+                                // بررسی چپ برای _
+                                else if (new_char == ' ' && x > 0 && map[y][x - 1] == '_') {
+                                    new_char = '_';
+                                }
+                                // بررسی راست برای _
+                                else if (new_char == ' ' && x + 1 < width && map[y][x + 1] == '_') {
+                                    new_char = '_';
+                                }
+
+                                mvprintw(y, x, "%c", new_char);  // چاپ کاراکتر مناسب
+                            }
                         break;
                     case 'f':
                         if(map_visited[y][x] == 0){

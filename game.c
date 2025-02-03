@@ -13,7 +13,7 @@
 #include "startup.h"
 #include "menu.h"
 #include "create_map.h"
-#define HUNGER_DECREASE_INTERVAL 10 // کاهش گرسنگی هر 5 ثانیه
+#define HUNGER_DECREASE_INTERVAL 15 // کاهش گرسنگی هر 5 ثانیه
 
 void show_message(WINDOW *msg_win, const char *message) {
     wclear(msg_win); // پاک کردن محتوای قبلی پنجره
@@ -206,6 +206,7 @@ Weapon createWeapon(WeaponType type) {
             weapon.range = 1;
             weapon.numbers = 0;
             weapon.is_consumable = 0;
+            weapon.color_pair = 130;
             break;
         case DAGGER:
             strcpy(weapon.name, "Dagger");
@@ -216,6 +217,7 @@ Weapon createWeapon(WeaponType type) {
             weapon.numbers = 0;
             weapon.is_consumable = 1;
             weapon.symbol_on_map = 'e';
+            weapon.color_pair = 133;
             break;
         case MAGIC_WAND:
             strcpy(weapon.name, "Magic Wand");
@@ -226,6 +228,7 @@ Weapon createWeapon(WeaponType type) {
             weapon.numbers = 0;
             weapon.is_consumable = 1;
             weapon.symbol_on_map = 'w';
+            weapon.color_pair = 31;
             break;
         case NORMAL_ARROW:
             strcpy(weapon.name, "Normal Arrow");
@@ -236,6 +239,7 @@ Weapon createWeapon(WeaponType type) {
             weapon.numbers = 0;
             weapon.symbol_on_map = 'n';
             weapon.is_consumable = 1;
+            weapon.color_pair = 45;
             break;
         case SWORD:
             strcpy(weapon.name, "Sword");
@@ -246,6 +250,7 @@ Weapon createWeapon(WeaponType type) {
             weapon.numbers = 0;
             weapon.is_consumable = 0;
             weapon.symbol_on_map = 'l';
+            weapon.color_pair = 143;
             break;
     }
 
@@ -254,13 +259,15 @@ Weapon createWeapon(WeaponType type) {
 void display_weapons(Player player, int height, int width) {
     mvprintw(height - 2, width/6, "Weapon: ");
     int x = 9;  // موقعیت شروع نمایش سلاح‌ها
-
+    attron(COLOR_PAIR(player.Weapon_list[0].color_pair));
     mvprintw(height - 2, width/6 + x, "%s", player.Weapon_list[0].symbol); 
     x += 3; // فاصله بین سلاح‌ها
-
+    attroff(COLOR_PAIR(player.Weapon_list[0].color_pair));
     for (int i = 1; i < 5; i++) {
         if(player.Weapon_list[i].numbers != 0){
+            attron(COLOR_PAIR(player.Weapon_list[i].color_pair));
             mvprintw(height - 2, width/6 + x, "%s", player.Weapon_list[i].symbol); 
+            attroff(COLOR_PAIR(player.Weapon_list[i].color_pair));
             x += 3; // فاصله بین سلاح‌ها
         }
     }
@@ -356,11 +363,13 @@ void update_hunger(Player *player) {
 void display_hunger_bar_ncurses(int hunger, int max_hunger, int y, int x) {
     int bar_length = 20; // طول نوار گرسنگی
     int filled = (hunger * bar_length) / max_hunger;
-
+    init_pair(162, 162, COLOR_BLACK);
     mvprintw(y, x, "Satiety: [");
+    attron(COLOR_PAIR(162));
     for (int i = 0; i < filled; i++) {
         printw("#"); // قسمت پر شده
     }
+    attroff(COLOR_PAIR(162));
     for (int i = filled; i < bar_length; i++) {
         printw("-"); // قسمت خالی
     }
@@ -371,11 +380,13 @@ void display_hunger_bar_ncurses(int hunger, int max_hunger, int y, int x) {
 void display_health_bar_ncurses(int health, int max_health, int y, int x) {
     int bar_length = 20; // طول نوار گرسنگی
     int filled = (health * bar_length) / max_health;
-
+    init_pair(85, 85, COLOR_BLACK);
     mvprintw(y, x, "Health: [");
+    attron(COLOR_PAIR(85));
     for (int i = 0; i < filled; i++) {
         printw("#"); // قسمت پر شده
     }
+    attroff(COLOR_PAIR(85));
     for (int i = filled; i < bar_length; i++) {
         printw("-"); // قسمت خالی
     }
@@ -783,7 +794,8 @@ void new_game() {
     int display_completely = 0;
     bool game_running = true;
     int g_clicked = 0;
-    time_t last_update = time(NULL);    
+    time_t last_update = time(NULL);   
+    time_t last_update2 = time(NULL);
 
     // حلقه اصلی بازی
     while (game_running) {
@@ -832,6 +844,12 @@ void new_game() {
                 player.y >= rooms[r].start_y && player.y < rooms[r].start_y + rooms[r].height) {
                 current_room = r;
                 break;
+            }
+        }
+        if(rooms[current_room].theme == 'e'){
+            if (difftime(time(NULL), last_update2) >= 5) {
+                player.health--;
+                last_update2 = time(NULL);
             }
         }
 
@@ -901,6 +919,21 @@ void new_game() {
                     map[monsters[i].y][monsters[i].x] = '.';
                     moveMonster(&monsters[i], player , map);
                     map[monsters[i].y][monsters[i].x] = monsters[i].symbol;
+                    int hit = rand() % 3;
+                    // بررسی برخورد بازیکن با هیولا (اگر بازیکن کنار هیولا باشد)
+                    if(hit){
+                        if ((player.x == monsters[i].x && (player.y == monsters[i].y - 1 || player.y == monsters[i].y + 1)) || 
+                            (player.y == monsters[i].y && (player.x == monsters[i].x - 1 || player.x == monsters[i].x + 1))) {
+                            
+                            player.health -= 3;  // کم کردن 3 واحد از سلامت بازیکن
+                            
+                            // چاپ پیام حمله هیولا
+                            mvprintw(whole_height - 3, width / 2 + 2, "The enemy %s attacked you! -3 HP", monsters[i].name);
+                            
+                            refresh();
+                            usleep(1000000);  // مکث 1 ثانیه‌ای برای نمایش پیام
+                        }
+                    }
                 }
             }
         }
@@ -927,7 +960,10 @@ void new_game() {
         // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
         display_hunger_bar_ncurses(player.hunger, 100, whole_height - 3 , width/6);
         display_weapons(player, whole_height, width);
-        mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  %s", player.equipped_weapon.name, player.equipped_weapon.symbol);         
+        mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  ", player.equipped_weapon.name);  
+        attron(COLOR_PAIR(player.equipped_weapon.color_pair));
+        mvprintw(whole_height - 1, width/6 + strlen("Equiped weapon: .....  "), "%s",player.equipped_weapon.symbol);         
+        attroff(COLOR_PAIR(player.equipped_weapon.color_pair));
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
@@ -973,7 +1009,7 @@ void new_game() {
             }
                     
         }
-        if((previous_cell != '<' && previous_cell != 'Y' && previous_cell != '#' && previous_cell != '+') && g_clicked == 0){
+        if((previous_cell != '<' && previous_cell != 'Y' && previous_cell != '#' && previous_cell != '+' && previous_cell != 'v') && g_clicked == 0){
             map[player.y][player.x] = '.';
         }
         g_clicked = 0;
@@ -1251,7 +1287,7 @@ void new_game() {
 }
 
 void continue_game() {
-    if(finished || user1->times_played < 1){
+    if(finished){
         return;
     }
     // تعریف متغیرها برای نقشه بازی
@@ -1394,6 +1430,21 @@ void continue_game() {
                     map[monsters[i].y][monsters[i].x] = '.';
                     moveMonster(&monsters[i], player , map);
                     map[monsters[i].y][monsters[i].x] = monsters[i].symbol;
+                    int hit = rand() % 3;
+                    // بررسی برخورد بازیکن با هیولا (اگر بازیکن کنار هیولا باشد)
+                    if(hit){
+                        if ((player.x == monsters[i].x && (player.y == monsters[i].y - 1 || player.y == monsters[i].y + 1)) || 
+                            (player.y == monsters[i].y && (player.x == monsters[i].x - 1 || player.x == monsters[i].x + 1))) {
+                            
+                            player.health -= 3;  // کم کردن 3 واحد از سلامت بازیکن
+                            
+                            // چاپ پیام حمله هیولا
+                            mvprintw(whole_height - 3, width / 2 + 2, "The enemy %s attacked you! -3 HP", monsters[i].name);
+                            
+                            refresh();
+                            usleep(1000000);  // مکث 1 ثانیه‌ای برای نمایش پیام
+                        }
+                    }
                 }
             }
         }
@@ -1420,7 +1471,9 @@ void continue_game() {
         // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
         display_hunger_bar_ncurses(player.hunger, 100, whole_height - 3 , width/6);
         display_weapons(player, whole_height, width);
+        attron(COLOR_PAIR(player.equipped_weapon.color_pair));
         mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  %s", player.equipped_weapon.name, player.equipped_weapon.symbol);         
+        attroff(COLOR_PAIR(player.equipped_weapon.color_pair));
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
         refresh();
@@ -1466,7 +1519,7 @@ void continue_game() {
             }
                     
         }
-        if((previous_cell != '<' && previous_cell != 'Y' && previous_cell != '#' && previous_cell != '+') && g_clicked == 0){
+        if((previous_cell != '<' && previous_cell != 'Y' && previous_cell != '#' && previous_cell != '+' && previous_cell != 'v') && g_clicked == 0){
             map[player.y][player.x] = '.';
         }
         g_clicked = 0;

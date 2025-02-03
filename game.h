@@ -44,6 +44,7 @@ typedef struct {
     int is_melee;
     int numbers;
     int is_consumable;
+    int color_pair;
 } Weapon;
 
 typedef struct {

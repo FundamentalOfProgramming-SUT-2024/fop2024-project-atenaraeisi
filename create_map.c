@@ -259,7 +259,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         }  else if(rooms[i].theme == 'n'){
             int num_gold_halluc = rand() % 4; 
             num_gold = 0;
-            num_talisman= rand() % 2;
+            num_talisman= 0;
             num_traps = 0;
             num_black_gold = 0;
             num_weapon = 0;   

@@ -755,8 +755,8 @@ void new_game() {
     }
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     Food foods[7];
-    int num_monster = 6;
-    Monster monsters[6];
+    int num_monster = 1 + rand() % 6;
+    Monster monsters[num_monster];
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, &player, rooms, num_rooms, foods, num_monster, monsters);
 
@@ -873,6 +873,14 @@ void new_game() {
 
         if(previous_cell == '<'){
             map = create_map(width, height, level_difficulty, &player, rooms, num_rooms, foods, num_monster, monsters);
+            for (int i = 0; i < width ; i++){
+                for(int j = 0; j < height; j++){
+                    map_visited[j][i] = 0;
+                }
+            }
+            //اتاق اول دیده شه
+            rooms[current_room].visited = 1;
+            rooms[0].visited = 0;
             previous_cell = '.';
         }
         // رسم بازیکن روی نقشه
@@ -885,7 +893,7 @@ void new_game() {
                 if(monsters[i].health == 0){
                     map[monsters[i].y][monsters[i].x] = '.';
                     monsters[i].active = false;
-                    mvprintw(whole_height - 2, width/2 + 2, "You killed the enemy  %s", monsters[i].name);
+                    mvprintw(whole_height - 2, width/2 + 2, "You killed the enemy %s!", monsters[i].name);
                     player.score += 100;
                     refresh();
                     usleep(1500000);
@@ -964,9 +972,8 @@ void new_game() {
                 player.y = rooms[index_treasure].start_y + rooms[index_treasure].height  -1 - rand() % 5;
             }
                     
-        } else if((previous_cell == 'M' || previous_cell == 'l' || previous_cell == 'e' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
-            map[player.y][player.x] = '.';
-        } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's' || previous_cell == 'f') && g_clicked == 0){
+        }
+        if((previous_cell != '<' && previous_cell != 'Y' && previous_cell != '#' && previous_cell != '+') && g_clicked == 0){
             map[player.y][player.x] = '.';
         }
         g_clicked = 0;

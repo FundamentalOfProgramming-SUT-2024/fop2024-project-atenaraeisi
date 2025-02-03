@@ -115,7 +115,7 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
 
         }
 
-        mvprintw(row - 2, 0, "Use UP/DOWN arrows to scroll. Press 'q' to quit.");
+        mvprintw(row - 2, col - strlen("Use UP/DOWN arrows to scroll. Press 'q' to quit."), "Use UP/DOWN arrows to scroll. Press 'q' to quit.");
 
         refresh();
 

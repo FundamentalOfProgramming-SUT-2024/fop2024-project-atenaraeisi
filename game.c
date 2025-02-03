@@ -1251,7 +1251,7 @@ void new_game() {
 }
 
 void continue_game() {
-    if(finished){
+    if(finished || user1->times_played < 1){
         return;
     }
     // تعریف متغیرها برای نقشه بازی

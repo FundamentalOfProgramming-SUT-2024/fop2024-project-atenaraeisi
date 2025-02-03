@@ -63,7 +63,7 @@ void print_game_menu(int row, int col, int selected){
     
     char *menu_items[] = {
         "Create a new game",
-        "Continue previous game",
+        "Resume previous game",
         "Scoreboard",
         "Settings",
         "Profile",

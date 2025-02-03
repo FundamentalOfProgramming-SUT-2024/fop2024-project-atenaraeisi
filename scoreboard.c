@@ -111,41 +111,65 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
 
     while (1) {
         clear();
-        mvprintw(0, (col - 15) / 2, "Leaderboard");
+        mvprintw(0, (col - 18) / 2, "🏆 Leaderboard 🏆");
         mvprintw(2, 0, " Rank |       Username       | Points | Golds | Times of playing | Experience");
         mvprintw(3, 0, "-----------------------------------------------------------------------------");
 
         // نمایش کاربران از start_index
+        // نمایش کاربران از start_index
         for (int i = 0; i < max_rows && (start_index + i) < total_users; i++) {
             int idx = start_index + i;
-            int color_pair = 2;
+            int color_pair = 2;  // پیش‌فرض برای کاربران عادی
+            int text_attr = A_NORMAL;  // ویژگی پیش‌فرض برای متن
 
-            // رنگ برای سه نفر برتر
-            if (idx == 0) color_pair = 1;
-            else if (idx == 1) color_pair = 1;
-            else if (idx == 2) color_pair = 1;
-
-            // رنگ برای کاربر لاگین‌شده
-            if (have_account && idx == logged_in_index) {
-                color_pair = 3;
-                attron(A_BOLD);  // برجسته کردن متن کاربر لاگین‌شده
+            // تغییر رنگ و ویژگی برای سه نفر برتر
+            if (idx == 0) {
+                init_pair(4, COLOR_BLACK, COLOR_YELLOW);  // پس‌زمینه زرد
+                color_pair = 4;
+            } else if (idx == 1) {
+                init_pair(5, COLOR_BLACK, COLOR_CYAN);    // پس‌زمینه آبی روشن
+                color_pair = 5;
+            } else if (idx == 2) {
+                init_pair(6, COLOR_BLACK, COLOR_MAGENTA); // پس‌زمینه صورتی
+                color_pair = 6;
             }
+
+
+            // رنگ و ویژگی برای کاربر لاگین‌شده
+            if (have_account && idx == logged_in_index) {
+                color_pair = 3;  // رنگ سبز برای کاربر لاگین‌شده
+                text_attr = A_BLINK;  // چشمک‌زن به عنوان ویژگی اضافی برای کاربر لاگین‌شده
+            }
+
             attron(COLOR_PAIR(color_pair));
-            
-            mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
-                     idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
-                     users[idx].times_played, users[idx].times_played);
+            attron(text_attr);  // اعمال ویژگی‌های متنی
+
+            if(idx == 0 || idx == 1 || idx == 2){
+                mvprintw(4 + i, 0, " %4d | %-18s🥇 | %6d | %5d | %8d         | %4d     ",
+                    idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
+                    users[idx].times_played, users[idx].times_played);
+            } else{
+                mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
+                        idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
+                        users[idx].times_played, users[idx].times_played);                
+            }
+
             
             // مدال برای سه نفر برتر
-            if (idx < 3) {
-                mvprintw(4 + i, col - 6, idx == 0 ? "GOAT" : (idx == 1 ? "Legend" : "Pro"));
-            }
-            attroff(COLOR_PAIR(color_pair));         
-            if (have_account && idx == logged_in_index) {
-                attroff(A_BOLD);
+            // مدال برای سه نفر برتر
+            if (idx == 0) {
+                mvprintw(4 + i, strlen("----------------------------------------------------------------------------"), "  ★ GOAT ★  ");
+            } else if (idx == 1) {
+                mvprintw(4 + i, strlen("----------------------------------------------------------------------------"), " ✪ Legend ✪ ");
+            } else if (idx == 2) {
+                mvprintw(4 + i, strlen("----------------------------------------------------------------------------"), "   ✰ Pro ✰  ");
             }
 
+
+            attroff(COLOR_PAIR(color_pair));
+            attroff(text_attr);  // حذف ویژگی‌های متنی
         }
+
 
         mvprintw(row - 2, col - strlen("Use UP/DOWN arrows to scroll. Press 'q' to quit."), "Use UP/DOWN arrows to scroll. Press 'q' to quit.");
 

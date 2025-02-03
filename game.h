@@ -113,7 +113,7 @@ void new_game();
 void continue_game();
 void save_game_to_binary_file();
 void load_game_from_binary_file();
-int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7]);
+int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7], int num_rooms, Room rooms[num_rooms]);
 void move_fast(char **map, int width, int height, Player *player, int **map_visited, Room *rooms, int num_rooms, int display_completely, Food foods[7]);
 void Scoreboard();
 void initialize_player(Player *player);

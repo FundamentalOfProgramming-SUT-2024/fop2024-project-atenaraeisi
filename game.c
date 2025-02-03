@@ -174,7 +174,7 @@ void display_victory_message(int score) {
     mvprintw(9, (width-25)/2, "Your final score: %d ⭐", score);
     mvprintw(11, (width-50)/2, "Press any key to return to the main menu... 🔙");
     refresh();
-    
+    sleep(2);
     getch();  // Wait for the player to press a key
 }
 void display_game_over_message(int score) {
@@ -188,7 +188,7 @@ void display_game_over_message(int score) {
     mvprintw(9, (width-25)/2, "Your final score: %d 💔", score);
     mvprintw(11, (width-45)/2, "Press any key to try again or return to the menu 🔄");
     refresh();
-    
+    sleep(2);
     getch();  // صبر برای فشردن کلید توسط بازیکن
 }
 
@@ -455,7 +455,7 @@ Monster* getMonsterAtPosition(Monster monsters[], int monster_count, int x, int 
     return NULL;  // در صورتی که هیولایی پیدا نشود
 }
 
-int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7]){
+int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_clicked, Food foods[7], int num_rooms, Room rooms[num_rooms]){
     int height, width;
     getmaxyx(stdscr, height, width);
     if(map[y][x] == '.' || map[y][x] == '#' || map[y][x] == '+' || map[y][x] == 'h'){
@@ -668,9 +668,41 @@ int can_go(int y, int x, char **map, Player* player, int ***map_visited, int g_c
                 return 0;
             }
         } else return 0;
-    } else if(map[y][x] == '*'){
+    } else if (map[y][x] == '*') {
+        // بررسی اتاق‌ها
+        for (int i = 0; i < num_rooms; i++) {
+            if (rooms[i].theme != 't') {  // فقط اتاق‌هایی که تم گنج ندارند
+                bool active_monster_found = false;
+
+                // بررسی وجود هیولای فعال در نقشه
+                for (int row = rooms[i].start_y; row < rooms[i].start_y + rooms[i].height; row++) {
+                    for (int col = rooms[i].start_x; col < rooms[i].start_x + rooms[i].width; col++) {
+                        if (map[row][col] == 'D' || map[row][col] == 'F' || map[row][col] == 'G' || 
+                            map[row][col] == 'S' || map[row][col] == 'U') {
+
+                            active_monster_found = true;
+                            break;
+                        }
+                    }
+                    if (active_monster_found) break;  // اگر هیولای فعال پیدا شد، نیازی به بررسی بیشتر نیست
+                }
+
+                // اگر هیولای فعال پیدا شد، هشدار نمایش داده و تابع را متوقف کن
+                if (active_monster_found) {
+                    int height, width;
+                    getmaxyx(stdscr, height, width);
+                    WINDOW *msg_win = newwin(3, 65, (height - 5)/2, (width - 65)/2);
+                    show_message(msg_win, "⚠️ There are still active monsters in non-treasure rooms! ⚠️");
+                    wrefresh(msg_win);
+                    usleep(1500000);  // نمایش پیام به مدت 2 ثانیه
+                    return 0;
+                }
+            }
+        }
+        // اگر هیچ هیولای فعالی پیدا نشد
         return 1;
     }
+
     else return 0;
 }
 
@@ -707,7 +739,7 @@ void move_fast(char **map, int width, int height, Player *player, int **map_visi
         int new_x = player->x + dx;
 
         // بررسی محدودیت‌های نقشه و مانع‌ها
-        if (new_y < 0 || new_y >= height || new_x < 0 || new_x >= width || !can_go(new_y, new_x, map, player, &map_visited, 0, foods)) {
+        if (new_y < 0 || new_y >= height || new_x < 0 || new_x >= width || !can_go(new_y, new_x, map, player, &map_visited, 0, foods, num_rooms, rooms)) {
             break;
         }
 
@@ -766,7 +798,14 @@ void new_game() {
     }
     Room *rooms = (Room *)malloc(num_rooms * sizeof(Room));
     Food foods[7];
-    int num_monster = 1 + rand() % 6;
+    int num_monster;
+    if(level_difficulty == 1){
+        num_monster = rand() % 6;
+    } else if(level_difficulty == 2){
+        num_monster = 2 + rand() % 6;
+    } else if(level_difficulty == 3){
+        num_monster = 4 + rand() % 6;
+    }
     Monster monsters[num_monster];
     // ساخت نقشه بازی
     char **map = create_map(width, height, level_difficulty, &player, rooms, num_rooms, foods, num_monster, monsters);
@@ -962,7 +1001,7 @@ void new_game() {
         display_weapons(player, whole_height, width);
         mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  ", player.equipped_weapon.name);  
         attron(COLOR_PAIR(player.equipped_weapon.color_pair));
-        mvprintw(whole_height - 1, width/6 + strlen("Equiped weapon: .....  "), "%s",player.equipped_weapon.symbol);         
+        mvprintw(whole_height - 1, width/6 + strlen(player.equipped_weapon.name) + 18, "%s",player.equipped_weapon.symbol);         
         attroff(COLOR_PAIR(player.equipped_weapon.color_pair));
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
@@ -1016,7 +1055,7 @@ void new_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
@@ -1024,7 +1063,7 @@ void new_game() {
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
@@ -1032,7 +1071,7 @@ void new_game() {
                     
                 break;
             case KEY_LEFT:
-                if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x -= player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
@@ -1040,14 +1079,14 @@ void new_game() {
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x += player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x += player.speed;
                     player.y-= player.speed;
                     player.direction[0] = 'y';
@@ -1055,7 +1094,7 @@ void new_game() {
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x += player.speed;
                     player.y += player.speed;
                     player.direction[0] = 'y';
@@ -1063,7 +1102,7 @@ void new_game() {
                 }
                 break;
             case KEY_HOME:
-                if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x -= player.speed;
                     player.y-= player.speed;
                     player.direction[0] = 'y';
@@ -1071,7 +1110,7 @@ void new_game() {
                 }
                 break;
             case KEY_END:
-                if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x -= player.speed;
                     player.y += player.speed;
                     player.direction[0] = 'y';
@@ -1096,7 +1135,7 @@ void new_game() {
                 int ch2 = getch();
                 switch (ch2) {
                     case KEY_UP:
-                        if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
@@ -1104,7 +1143,7 @@ void new_game() {
                             
                         break;
                     case KEY_DOWN:
-                        if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
@@ -1112,7 +1151,7 @@ void new_game() {
                             
                         break;
                     case KEY_LEFT:
-                        if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x -= player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '-';
@@ -1120,14 +1159,14 @@ void new_game() {
                         
                         break;
                     case KEY_RIGHT:
-                        if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x += player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '+';
                         }
                         break;
                     case KEY_PPAGE:
-                        if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x += player.speed;
                             player.y-= player.speed;
                             player.direction[0] = 'y';
@@ -1135,7 +1174,7 @@ void new_game() {
                         }
                         break;
                     case KEY_NPAGE:
-                        if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x += player.speed;
                             player.y += player.speed;
                             player.direction[0] = 'y';
@@ -1143,7 +1182,7 @@ void new_game() {
                         }
                         break;
                     case KEY_HOME:
-                        if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x -= player.speed;
                             player.y-= player.speed;
                             player.direction[0] = 'y';
@@ -1151,7 +1190,7 @@ void new_game() {
                         }
                         break;
                     case KEY_END:
-                        if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x -= player.speed;
                             player.y += player.speed;
                             player.direction[0] = 'y';
@@ -1245,7 +1284,8 @@ void new_game() {
                                 enemy->health = 0;
                             } 
                             else mvprintw(whole_height - 2, width/2 + 2, "The projectile hit %s, remaining Health: %d", enemy->name, enemy->health);
-                            break;
+                            refresh();
+                            sleep(1);
                         }
                     }
 
@@ -1372,31 +1412,28 @@ void continue_game() {
         int countMonster = 0;
         Room current = rooms[current_room];
 
-        if(player.is_in_floor > 4){
-            WINDOW *msg_win = newwin(10, 50, height/2, (width - 50)/2);
-            wclear(msg_win); // پاک کردن محتوای قبلی پنجره
-            box(msg_win, 0, 0); // افزودن کادر دور پنجره
-            mvwprintw(msg_win, 1, 21, "You win!"); // نوشتن پیام جدید
-            mvwprintw(msg_win, 3, 12, "You collected %d golds.",player.collected_golds); // نوشتن پیام جدید
-            mvwprintw(msg_win, 5, 12, "Your Score is %d.", player.score); // نوشتن پیام جدید
-            wrefresh(msg_win); // به‌روزرسانی پنجره
-            sleep(5);
-            break;
-        }
+        // if(player.is_in_floor > 4){
+        //     WINDOW *msg_win = newwin(10, 50, height/2, (width - 50)/2);
+        //     wclear(msg_win); // پاک کردن محتوای قبلی پنجره
+        //     box(msg_win, 0, 0); // افزودن کادر دور پنجره
+        //     mvwprintw(msg_win, 1, 21, "You win!"); // نوشتن پیام جدید
+        //     mvwprintw(msg_win, 3, 12, "You collected %d golds.",player.collected_golds); // نوشتن پیام جدید
+        //     mvwprintw(msg_win, 5, 12, "Your Score is %d.", player.score); // نوشتن پیام جدید
+        //     wrefresh(msg_win); // به‌روزرسانی پنجره
+        //     sleep(5);
+        //     break;
+        // }
 
         // بررسی پایان بازی
         if (player.health <= 0) {
-            WINDOW *msg_win = newwin(3, 35, height/2, (width - 35)/2);
-            show_message(msg_win, "Game Over! You starved to death.");
-            wrefresh(msg_win);
-            // مکث برای مشاهده پیام
-            sleep(2);
+            display_game_over_message(player.score);
+            finished = 1;
             break;
         }
         if (player.is_in_floor == 4 && all_monsters_defeated(monsters, num_monster) && rooms[current_room].theme == 't') {
-            player.score += player.health;
+            player.score += player.health + 1000;
             display_victory_message(player.score);
-
+            finished = 1;
             // بازگشت به منوی اصلی یا پایان بازی
             break;  // حلقه بازی را متوقف کن
         }
@@ -1471,8 +1508,9 @@ void continue_game() {
         // mvprintw(whole_height - 2, width/6, "hunger: %d%%", player.hunger);
         display_hunger_bar_ncurses(player.hunger, 100, whole_height - 3 , width/6);
         display_weapons(player, whole_height, width);
+        mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  ", player.equipped_weapon.name);  
         attron(COLOR_PAIR(player.equipped_weapon.color_pair));
-        mvprintw(whole_height - 1, width/6, "Equiped weapon: %s  %s", player.equipped_weapon.name, player.equipped_weapon.symbol);         
+        mvprintw(whole_height - 1, width/6 + strlen(player.equipped_weapon.name) + 18, "%s",player.equipped_weapon.symbol);         
         attroff(COLOR_PAIR(player.equipped_weapon.color_pair));
         attroff(A_BOLD);
         mvprintw(whole_height - 4, width/2 + 2, "Press q/Esc to exit the game (note:game will be saved).");        
@@ -1526,7 +1564,7 @@ void continue_game() {
         // مدیریت ورودی‌ها
         switch (ch) {
             case KEY_UP:
-                if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.y-= player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '-';
@@ -1534,7 +1572,7 @@ void continue_game() {
                     
                 break;
             case KEY_DOWN:
-                if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.y += player.speed;
                     player.direction[0] = 'y';
                     player.direction[1] = '+';
@@ -1542,7 +1580,7 @@ void continue_game() {
                     
                 break;
             case KEY_LEFT:
-                if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x -= player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '-';
@@ -1550,14 +1588,14 @@ void continue_game() {
                    
                 break;
             case KEY_RIGHT:
-                if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x += player.speed;
                     player.direction[0] = 'x';
                     player.direction[1] = '+';
                 }
                 break;
             case KEY_PPAGE:
-                if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x += player.speed;
                     player.y-= player.speed;
                     player.direction[0] = 'y';
@@ -1565,7 +1603,7 @@ void continue_game() {
                 }
                 break;
             case KEY_NPAGE:
-                if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x += player.speed;
                     player.y += player.speed;
                     player.direction[0] = 'y';
@@ -1573,7 +1611,7 @@ void continue_game() {
                 }
                 break;
             case KEY_HOME:
-                if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x -= player.speed;
                     player.y-= player.speed;
                     player.direction[0] = 'y';
@@ -1581,7 +1619,7 @@ void continue_game() {
                 }
                 break;
             case KEY_END:
-                if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                     player.x -= player.speed;
                     player.y += player.speed;
                     player.direction[0] = 'y';
@@ -1606,7 +1644,7 @@ void continue_game() {
                 int ch2 = getch();
                 switch (ch2) {
                     case KEY_UP:
-                        if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y >= player.speed && can_go(player.y-player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.y-= player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '-';
@@ -1614,7 +1652,7 @@ void continue_game() {
                             
                         break;
                     case KEY_DOWN:
-                        if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y < height - player.speed && can_go(player.y + player.speed , player.x, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.y += player.speed;
                             player.direction[0] = 'y';
                             player.direction[1] = '+';
@@ -1622,7 +1660,7 @@ void continue_game() {
                             
                         break;
                     case KEY_LEFT:
-                        if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.x >= player.speed && can_go(player.y , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x -= player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '-';
@@ -1630,14 +1668,14 @@ void continue_game() {
                         
                         break;
                     case KEY_RIGHT:
-                        if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.x < width - player.speed && can_go(player.y , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x += player.speed;
                             player.direction[0] = 'x';
                             player.direction[1] = '+';
                         }
                         break;
                     case KEY_PPAGE:
-                        if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y >= player.speed && player.x < width - player.speed && can_go(player.y-player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x += player.speed;
                             player.y-= player.speed;
                             player.direction[0] = 'y';
@@ -1645,7 +1683,7 @@ void continue_game() {
                         }
                         break;
                     case KEY_NPAGE:
-                        if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y < height - player.speed && player.x < width - player.speed && can_go(player.y + player.speed , player.x + player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x += player.speed;
                             player.y += player.speed;
                             player.direction[0] = 'y';
@@ -1653,7 +1691,7 @@ void continue_game() {
                         }
                         break;
                     case KEY_HOME:
-                        if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y >= player.speed && player.x >= player.speed && can_go(player.y-player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x -= player.speed;
                             player.y-= player.speed;
                             player.direction[0] = 'y';
@@ -1661,7 +1699,7 @@ void continue_game() {
                         }
                         break;
                     case KEY_END:
-                        if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods)){
+                        if (player.y < height - player.speed && player.x >= player.speed && can_go(player.y + player.speed , player.x - player.speed, map, &player, &map_visited, g_clicked, foods, num_rooms, rooms)){
                             player.x -= player.speed;
                             player.y += player.speed;
                             player.direction[0] = 'y';
@@ -1755,7 +1793,8 @@ void continue_game() {
                                 enemy->health = 0;
                             } 
                             else mvprintw(whole_height - 2, width/2 + 2, "The projectile hit %s, remaining Health: %d", enemy->name, enemy->health);
-                            break;
+                            refresh();
+                            sleep(1);
                         }
                     }
 

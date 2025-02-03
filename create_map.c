@@ -7,6 +7,7 @@
 #include <math.h>
 #include "create_map.h"
 #include "game.h"
+#include "menu.h"
 
 bool is_valid_position(char **map, int x, int y) {
     return map[y][x] == '.';
@@ -167,9 +168,48 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         }
         
     }
+    //تم بندی اتاق ها
+    // تم بندی اتاق‌ها
+    int num_regular_rooms = num_rooms / 2; 
+    int num_treasure_rooms = 0, num_enchant_rooms = 1, num_nightmare_rooms = 1;
+
+    if (player->is_in_floor == 4) {
+        num_treasure_rooms = 1;  // اضافه کردن اتاق گنج در طبقه 4
+    }
+
+    // تکمیل تعداد اتاق‌ها با اتاق‌های جادویی
+    while (num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms) {
+        num_enchant_rooms++;
+    }
+
+    // تخصیص اتاق‌های معمولی
+    for (int i = 0; i < num_regular_rooms; i++) {
+        rooms[i].theme = 'r';  // regular rooms
+    }
+
+    // تخصیص اتاق‌های جادویی
+    for (int i = num_regular_rooms; i < num_regular_rooms + num_enchant_rooms; i++) {
+        rooms[i].theme = 'e';  // enchant rooms
+    }
+
+    // تخصیص اتاق‌های کابوس
+    for (int i = num_regular_rooms + num_enchant_rooms; 
+            i < num_regular_rooms + num_enchant_rooms + num_nightmare_rooms; 
+            i++) {
+        rooms[i].theme = 'n';  // nightmare rooms
+    }
+
+    // اگر اتاق گنج وجود دارد، آن را به آخرین عضو آرایه اختصاص بده
+    if (num_treasure_rooms == 1) {
+        rooms[num_rooms - 1].theme = 't';  // treasure room در آخرین اتاق
+    }
+
     //وصل کردن اتاق ها با راهرو
     int prev_center_x = -1, prev_center_y = -1;
     for(int i = 0; i < num_rooms ; i++){
+        if(rooms[i].theme == 't'){
+            break;
+        }
         //rooms[i]
         //مختصات مرکز اتاق
         int center_x = rooms[i].start_x + rooms[i].width / 2;
@@ -193,25 +233,6 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         prev_center_y = center_y;
     }
     rooms[0].visited = 1;
-    //تم بندی اتاق ها
-    int num_regular_rooms = num_rooms / 2; 
-    int num_treasure_rooms = 0, num_enchant_rooms = 1, num_nightmare_rooms = 1;
-    if(player->is_in_floor == 4){
-        num_treasure_rooms = 1;
-    }
-    while(num_treasure_rooms + num_enchant_rooms + num_nightmare_rooms + num_regular_rooms < num_rooms){
-        num_enchant_rooms++;
-    }
-    for(int i = 0 ; i < num_regular_rooms ; i++){
-        rooms[i].theme = 'r'; //regular rooms
-    }
-    if(player->is_in_floor == 4){
-        rooms[num_regular_rooms].theme = 't'; //treasure room
-    }
-    for(int i = num_regular_rooms + num_treasure_rooms ; i < num_regular_rooms + 1 + num_enchant_rooms ; i++){
-        rooms[i].theme = 'e'; //enchant rooms
-    }
-    rooms[num_regular_rooms + num_treasure_rooms + num_enchant_rooms].theme = 'n'; //nightmare rooms
     //گذاشتن چیز میزای دیگه تو اتاقا
     int stair_room = rand() % (num_rooms-1) + 1;
     while(rooms[stair_room].theme == 'n'){
@@ -346,7 +367,7 @@ char **create_map(int width, int height, int level_difficulty, Player* player, R
         if(i == stair_room && player->is_in_floor < 4){
             int stair_x = rooms[i].start_x + rand() % (rooms[i].width);
             int stair_y = rooms[i].start_y + rand() % (rooms[i].height);
-            while(map[stair_y][stair_x] != '.'){
+            while(map[stair_y][stair_x] != '.' || rooms[i].theme == 't'){
                 stair_x = rooms[i].start_x + rand() % (rooms[i].width);
                 stair_y = rooms[i].start_y + rand() % (rooms[i].height);
             }

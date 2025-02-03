@@ -13,7 +13,7 @@
 #include "menu.h"
 #include "create_map.h"
 
-void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int num_rooms, Player *player,  int **map_visited, Food foods[7]) {
+void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int num_rooms, Player *player,  int **map_visited, Food foods[7], int num_monster, Monster* monsters) {
     FILE *file = fopen("previous_game.bin", "wb");
     if (!file) {
         perror("Could not open file");
@@ -47,10 +47,17 @@ void save_game_to_binary_file(char **map, int rows, int cols, Room *rooms, int n
     //ذخیره غذا ها
     fwrite(foods, sizeof(Food), 7, file);
 
+    // ذخیره تعداد هیولا
+    fwrite(&num_monster, sizeof(int), 1, file);
+
+    // ذخیره اطلاعات هیولاها
+    fwrite(monsters, sizeof(Monster), num_monster, file);
+
+
     fclose(file);
 }
 
-void load_game_from_binary_file(char ***map, int *rows, int *cols, Room **rooms, int *num_rooms, Player *player, int ***map_visited, Food (*foods)[7]) {
+void load_game_from_binary_file(char ***map, int *rows, int *cols, Room **rooms, int *num_rooms, Player *player, int ***map_visited, Food (*foods)[7], int* num_monster, Monster **monsters) {
     FILE *file = fopen("previous_game.bin", "rb");
     if (!file) {
         perror("Could not open file");
@@ -91,5 +98,12 @@ void load_game_from_binary_file(char ***map, int *rows, int *cols, Room **rooms,
 
     //خواندن غذاهای موجود در صفحه
     fread(foods, sizeof(Food), 7, file);
+
+     // خواندن تعداد هیولاها
+    fread(num_monster, sizeof(int), 1, file);
+
+    // تخصیص حافظه برای هیولاها
+    *monsters = (Monster *)malloc(*num_monster * sizeof(Monster));
+    fread(*monsters, sizeof(Monster), *num_monster, file);
     fclose(file);
 }

@@ -1239,7 +1239,7 @@ void new_game() {
         save_user(user1);
     }
 
-   save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods);
+   save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods, num_monster ,monsters);
 
 
     // آزاد کردن حافظه نقشه
@@ -1270,7 +1270,7 @@ void continue_game() {
     talisman current_talisman = {0};
 
     // بارگذاری اطلاعات بازی
-    load_game_from_binary_file(&map, &height, &width, &rooms, &num_rooms, &player, &map_visited, &foods);
+    load_game_from_binary_file(&map, &height, &width, &rooms, &num_rooms, &player, &map_visited, &foods, &num_monster, &monsters);
 
     // تنظیم رنگ بازیکن
     player.color = hero_color;
@@ -1465,9 +1465,8 @@ void continue_game() {
                 player.y = rooms[index_treasure].start_y + rooms[index_treasure].height  -1 - rand() % 5;
             }
                     
-        } else if((previous_cell == 'M' || previous_cell == 'l' || previous_cell == 'e' || previous_cell == 'N' || previous_cell == 'W') && g_clicked == 0){
-            map[player.y][player.x] = '.';
-        } else if((previous_cell == 'H' || previous_cell == 'd' || previous_cell == 's' || previous_cell == 'f') && g_clicked == 0){
+        }
+        if((previous_cell != '<' && previous_cell != 'Y' && previous_cell != '#' && previous_cell != '+') && g_clicked == 0){
             map[player.y][player.x] = '.';
         }
         g_clicked = 0;
@@ -1726,7 +1725,7 @@ void continue_game() {
         }
     }
 
-    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods);
+    save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods, num_monster, monsters);
 
     // آزاد کردن حافظه
     for (int i = 0; i < height; i++) {

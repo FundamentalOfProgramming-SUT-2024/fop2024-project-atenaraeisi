@@ -13,17 +13,17 @@
 #include "menu.h"
 #include "create_map.h"
 
-// تابع مقایسه برای مرتب‌سازی بر اساس points
 int compare_users_by_points(const void *a, const void *b) {
     const user *userA = (const user *)a;
     const user *userB = (const user *)b;
 
-    // ترتیب صعودی
-    //return userA->points - userB->points;
-
-    // برای ترتیب نزولی:
-    return userB->points - userA->points;
+    if (userB->points != userA->points) {
+        return userB->points - userA->points;  // ترتیب نزولی امتیاز
+    } else {
+        return userB->golds - userA->golds;    // ترتیب نزولی طلا در صورت تساوی امتیاز
+    }
 }
+
 
 // تابع مرتب‌سازی کاربران
 void sort_users_by_points(user *users, int total_users) {
@@ -55,6 +55,38 @@ int load_users_from_file(const char *filename, user **users) {
     fclose(file);
 
     return total_users;
+}
+
+int merge_duplicate_users(user *users, int total_users) {
+    for (int i = 0; i < total_users; i++) {
+        for (int j = i + 1; j < total_users; j++) {
+            if (strcmp(users[i].UserName, users[j].UserName) == 0) {
+                // ادغام اطلاعات کاربران
+                users[i].points += users[j].points;
+                users[i].golds += users[j].golds;
+                users[i].times_played += users[j].times_played;
+
+                // حذف کاربر j از لیست
+                for (int k = j; k < total_users - 1; k++) {
+                    users[k] = users[k + 1];
+                }
+                total_users--;
+                j--; // چون یکی از کاربران حذف شده، باید مجدداً همان اندیس را بررسی کنیم
+            }
+        }
+    }
+    return total_users;
+}
+int find_logged_in_index(user *users, int total_users, char *logged_in_username) {
+    if(!have_account){
+        return -1;
+    }
+    for (int i = 0; i < total_users; i++) {
+        if (strcmp(users[i].UserName, logged_in_username) == 0) {
+            return i;  // اندیس کاربر لاگین‌شده پیدا شد
+        }
+    }
+    return 0;  // اگر کاربر پیدا نشد
 }
 
 // تابع نمایش جدول امتیازات
@@ -94,11 +126,11 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
             else if (idx == 2) color_pair = 1;
 
             // رنگ برای کاربر لاگین‌شده
-            if (idx == logged_in_index) color_pair = 3;
-            attron(COLOR_PAIR(color_pair));
-            if(user1 != NULL && strcmp(user1->UserName , users[idx].UserName) == 0){
-                attron(A_BOLD);
+            if (have_account && idx == logged_in_index) {
+                color_pair = 3;
+                attron(A_BOLD);  // برجسته کردن متن کاربر لاگین‌شده
             }
+            attron(COLOR_PAIR(color_pair));
             
             mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
                      idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
@@ -108,8 +140,8 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
             if (idx < 3) {
                 mvprintw(4 + i, col - 6, idx == 0 ? "GOAT" : (idx == 1 ? "Legend" : "Pro"));
             }
-            attroff(COLOR_PAIR(color_pair));            
-            if(user1 != NULL && strcmp(user1->UserName , users[idx].UserName) == 0){
+            attroff(COLOR_PAIR(color_pair));         
+            if (have_account && idx == logged_in_index) {
                 attroff(A_BOLD);
             }
 
@@ -128,28 +160,43 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
     endwin();
 }
 
-void Scoreboard(){
+void Scoreboard() { 
+    char *logged_in_username = NULL; 
+    if(have_account){
+        // تخصیص حافظه به اندازه نام کاربر
+        logged_in_username = (char *)malloc(strlen(user1->UserName) + 1); 
+        if (logged_in_username == NULL) {
+            perror("Memory allocation error");
+            return;
+        }
+        strcpy(logged_in_username, user1->UserName); 
+    }
     user *users = NULL;
     int total_users = load_users_from_file("users.bin", &users);
 
     if (total_users == 0) {
-        // ایجاد پنجره برای پیام‌ها
         WINDOW *msg_win = newwin(3, 50, 1, 1);
         show_message(msg_win, "No users found in file.\n");
         wrefresh(msg_win);
-        // مکث برای مشاهده پیام
         sleep(2);
         return;
     }
 
-    int logged_in_index = 0; // فرض کنیم کاربر اول لاگین کرده است
-    if (total_users > 0) {
-        sort_users_by_points(users, total_users);
-        display_leaderboard(users, total_users, logged_in_index);
-    }
-    
-    free(users); // آزاد کردن حافظه
+    // ادغام کاربران با نام یکسان
+    total_users = merge_duplicate_users(users, total_users);
+
+    // مرتب‌سازی بر اساس امتیاز و تعداد طلا
+    sort_users_by_points(users, total_users);
+
+    // پیدا کردن اندیس کاربر لاگین‌شده
+    int logged_in_index = find_logged_in_index(users, total_users, logged_in_username);
+
+    // نمایش جدول امتیازات
+    display_leaderboard(users, total_users, logged_in_index);
+
+    free(users);
 }
+
 void show_profile(){
 
 }

@@ -1233,9 +1233,9 @@ void new_game() {
     }
 
     if(have_account){
-        user1->points += player.score;
-        user1->golds += player.collected_golds;
-        user1->times_played++;
+        user1->points = player.score;
+        user1->golds = player.collected_golds;
+        user1->times_played = 1;
         save_user(user1);
     }
 
@@ -1724,7 +1724,12 @@ void continue_game() {
                 break;
         }
     }
-
+    if(have_account){
+        user1->points = player.score;
+        user1->golds = player.collected_golds;
+        user1->times_played = 1;
+        save_user(user1);
+    }
     save_game_to_binary_file(map, height, width,rooms, num_rooms, &player, map_visited, foods, num_monster, monsters);
 
     // آزاد کردن حافظه

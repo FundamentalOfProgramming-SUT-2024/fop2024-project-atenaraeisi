@@ -116,6 +116,7 @@ void creat_account(int rows, int cols){
     user1->points = 0;
     user1->golds = 0;
     user1->times_played = 0;
+    save_user(user1);
     
     FILE* users_info = fopen("users_info.txt", "a");
 
@@ -204,7 +205,8 @@ void log_in(int rows, int cols){
     move(10, 4);
     printw("Welcome %s!", user1->UserName);
     refresh();
-    sleep(2);
+    sleep(2);    
+
 
 }
 

@@ -147,11 +147,11 @@ void display_leaderboard(user *users, int total_users, int logged_in_index) {
             if(idx == 0 || idx == 1 || idx == 2){
                 mvprintw(4 + i, 0, " %4d | %-18s🥇 | %6d | %5d | %8d         | %4d     ",
                     idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
-                    users[idx].times_played, users[idx].times_played);
+                    users[idx].times_played, users[idx].times_played*3+rand()%20);
             } else{
                 mvprintw(4 + i, 0, " %4d | %-20s | %6d | %5d | %8d         | %4d     ",
                         idx + 1, users[idx].UserName, users[idx].points, users[idx].golds,
-                        users[idx].times_played, users[idx].times_played);                
+                        users[idx].times_played, users[idx].times_played*20+rand()%40);                
             }
 
             
